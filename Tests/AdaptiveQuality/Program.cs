@@ -1,0 +1,26 @@
+using ReyDesk.Windows.Media;
+using ReyDesk.Windows.Settings;
+int count=0;
+void Check(bool condition,string name){if(!condition)throw new Exception(name);count++;}
+var controller=new AdaptiveQuality(new StreamPreferences());
+Check(controller.Observe(0,4,0) is null,"stable quality unchanged");
+Check(controller.Observe(20,250,2000) is null,"bad sample debounced");
+Check(controller.Observe(20,250,4000) is null,"two bad samples debounced");
+var lower=controller.Observe(20,250,6000);
+Check(lower?.MaxHeight==1080&&lower.MaxFps==30&&lower.BitrateKbps==8000,"retain text resolution first");
+Check(controller.Observe(20,250,6001) is null,"rapid untrusted samples ignored");
+controller.Observe(20,250,8000);controller.Observe(20,250,10000);
+Check(controller.Observe(20,250,12000) is null,"cooldown prevents oscillation");
+controller.Observe(20,250,14000);
+lower=controller.Observe(20,250,16000);
+Check(lower?.MaxHeight==1080&&lower.MaxFps==15&&lower.BitrateKbps==4000,"bounded severe degradation");
+for(int i=0;i<5;i++)Check(controller.Observe(0,10,18000+i*2000) is null,"recovery hysteresis");
+Check(controller.Observe(0,10,28000)?.MaxFps==30,"one recovery tier");
+controller=new AdaptiveQuality(new StreamPreferences(720,15,4000));
+controller.Observe(50,300,0);controller.Observe(50,300,2000);
+lower=controller.Observe(50,300,4000);
+Check(lower?.MaxHeight==720&&lower.MaxFps==15&&lower.BitrateKbps==4000,"never lift client-host ceilings");
+controller=new AdaptiveQuality(new StreamPreferences());
+Check(controller.Observe(double.NaN,double.PositiveInfinity,0) is null,"unavailable invalid metrics do not adapt");
+Check(controller.Observe(-1,-1,2000) is null,"negative metrics do not adapt");
+Console.WriteLine($"PASS {count} adaptive quality checks");

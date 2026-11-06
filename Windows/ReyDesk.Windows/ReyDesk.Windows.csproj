@@ -1,0 +1,138 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <Product>ReyDesk</Product>
+    <Company>Reyden</Company>
+    <Description>ReyDesk Windows desktop and phone companion</Description>
+    <!-- Single source of truth: ReyDesk/VERSION (also read by Android). InformationalVersion = version + short git sha. -->
+    <ReyDeskVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\VERSION').Trim())</ReyDeskVersion>
+    <Version>$(ReyDeskVersion)</Version>
+    <AssemblyVersion>$(ReyDeskVersion).0</AssemblyVersion>
+    <FileVersion>$(ReyDeskVersion).0</FileVersion>
+    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <AssemblyName>ReyDesk</AssemblyName>
+    <RootNamespace>ReyDesk.Windows</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <Platforms>x86;x64;ARM64</Platforms>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+    <PublishProfile Condition="Exists('Properties\PublishProfiles\win-$(Platform).pubxml')">win-$(Platform).pubxml</PublishProfile>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <!--
+      Genuinely unpackaged (no MSIX identity needed for local dev/run). Requires
+      the Windows App Runtime installed on the machine (Framework + Main +
+      Singleton + DDLM packages - a plain Framework-only install, e.g. via
+      winget, is NOT enough and fails with REGDB_E_CLASSNOTREG). Install via the
+      official installer (see docs/BUILD.md). Tried
+      WindowsAppSDKSelfContained=true first to avoid needing any installed
+      runtime at all, but hit a known native crash (0xc000027b in
+      Microsoft.UI.Xaml.dll) documented in several open microsoft/
+      microsoft-ui-xaml GitHub issues for that exact scenario - not used here.
+    -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- H264Encoder/Nv12Conversion read D3D11 staging-texture memory and MF sample
+         buffers directly via pointers - avoids a redundant managed-array copy on every
+         captured frame. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <Target Name="ReyDeskGitSha" BeforeTargets="InitializeSourceControlInformationFromSourceControlManager;AddSourceRevisionToInformationalVersion;GetAssemblyVersion" Condition="'$(SourceRevisionId)' == ''">
+    <Exec Command="git rev-parse --short HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true" ContinueOnError="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="ReyDeskGitSha" />
+    </Exec>
+    <PropertyGroup Condition="'$(ReyDeskGitSha)' != '' And !$(ReyDeskGitSha.Contains(' '))">
+      <SourceRevisionId>$(ReyDeskGitSha)</SourceRevisionId>
+    </PropertyGroup>
+  </Target>
+
+  <ItemGroup>
+    <Content Include="Assets\Fonts\*" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\LockScreenLogo.scale-200.png" />
+    <Content Include="Assets\Square150x150Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.scale-200.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-48_altform-lightunplated.png" />
+    <Content Include="Assets\StoreLogo.png" />
+    <Content Include="Assets\AppIcon.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Tray-*.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Logo-Horizontal-Dark.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <!-- Generated protocol types live in a separate class library, not generated here
+       directly - see Protocol/csharp/ReyDesk.Protocol/ReyDesk.Protocol.csproj
+       for why (WinUI3's XAML compiler breaks when combined with Grpc.Tools codegen
+       in the same project). -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\Protocol\csharp\ReyDesk.Protocol\ReyDesk.Protocol.csproj" />
+  </ItemGroup>
+
+  <!--
+    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
+    Tools extension to be activated for this project even if the Windows App SDK Nuget
+    package has not yet been restored.
+  -->
+  <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+
+  <!--
+    Microsoft.Windows.SDK.BuildTools.WinApp adds first-class support for
+    `dotnet run` on packaged WinUI apps: it hooks the .NET CLI Run target to
+    register a debug identity via the winapp CLI and launch the app with
+    package identity (AUMID).
+    Set <EnableWinAppRunSupport>false</EnableWinAppRunSupport> in a
+    <PropertyGroup> above to opt out.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2526" />
+    <!--
+      TEMP: reverted to 2.4.0 - proven working via an isolated bare/unmodified
+      `dotnet new winui` template on a development machine; 1.8.x
+      did NOT fix the crash, so the SDK version wasn't the actual cause.
+    -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.4.0" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="0.6.1" />
+    <PackageReference Include="QRCoder" Version="1.8.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.11" />
+    <!-- WebRTC transport (data channels + pre-encoded H.264 video via
+         RTCPeerConnection.SendVideo). SIPSorcery needs no separate encoder library on its own side. -->
+    <PackageReference Include="SIPSorcery" Version="10.0.16" />
+    <!-- Screen capture (Windows.Graphics.Capture's D3D device bridge) + the encoder's
+         GPU texture readback - see Media/ScreenCapture.cs. NOT Vortice.MediaFoundation:
+         that package doesn't actually expose IMFTransform/IMFSample, so the encoder
+         itself uses a small hand-written interop layer instead, see
+         MediaFoundation/MfInterfaces.cs. -->
+    <PackageReference Include="Vortice.Direct3D11" Version="3.8.3" />
+    <PackageReference Include="Vortice.DXGI" Version="3.8.3" />
+  </ItemGroup>
+
+  <!--
+    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
+    Explorer "Package and Publish" context menu entry to be enabled for this project even if
+    the Windows App SDK Nuget package has not yet been restored.
+  -->
+  <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
+    <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
+  </PropertyGroup>
+
+  <!-- Publish Properties -->
+  <PropertyGroup>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
+    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
+    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+  </PropertyGroup>
+</Project>

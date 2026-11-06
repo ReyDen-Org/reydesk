@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+import "reydesk/v1/common.proto";
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+// Payload encoded into the pairing QR code / typed in for PIN fallback.
+// `host_public_key` is the Windows device's long-term Ed25519 public key;
+// the QR channel (or a human reading a short PIN aloud) is what makes this
+// trust-on-first-use exchange resistant to MITM — see docs/protocol.md
+// "Pairing & trust model". Never contains a session key or secret itself.
+message PairingOffer {
+  DeviceIdentity host = 1;
+  bytes host_public_key = 2;
+  string local_ip_hint = 3;
+  uint32 local_port_hint = 4;
+  string pairing_token = 5;   // one-time, short-lived, consumed on use
+  int64 expires_at_unix_ms = 6;
+  // v2: rendezvous service URL for remote pairing (host desk id is host.desk_id).
+  string rendezvous_url = 7;
+}
+
+// Sent by the joining device after scanning/entering the offer, signed
+// with the joining device's own long-term key so the host can verify it
+// too (mutual trust, not just host-verified-by-client).
+message PairingRequest {
+  DeviceIdentity requester = 1;
+  bytes requester_public_key = 2;
+  string pairing_token = 3;
+  bytes signature = 4;
+  // Separate challenge-response flow, available only to an explicitly opted-in
+  // exact stored client key. Never interprets an absent PIN as authorization.
+  bool unattended_reconnect = 5;
+  bytes reconnect_client_nonce = 6;
+  // v2 pairing; v2 is detected by method != PAIRING_METHOD_UNSPECIFIED.
+  PairingMethod method = 7;
+  PairingStage stage = 8;
+  bytes sas_commitment = 9;
+  bytes sas_client_nonce = 10;
+  bytes attended_client_nonce = 11; // M5 only, 32 bytes, first message only
+}
+
+enum PairingMethod {
+  PAIRING_METHOD_UNSPECIFIED = 0;
+  PAIRING_METHOD_LAN_QR = 1;
+  PAIRING_METHOD_LAN_SAS = 2;
+  PAIRING_METHOD_REMOTE_QR = 3;
+  PAIRING_METHOD_REMOTE_CODE = 4;
+  PAIRING_METHOD_TRUSTED_ATTENDED = 5;
+  PAIRING_METHOD_TRUSTED_UNATTENDED = 6;
+}
+
+enum PairingStage {
+  PAIRING_STAGE_UNSPECIFIED = 0;
+  PAIRING_STAGE_SAS_HOST_NONCE = 1;
+  PAIRING_STAGE_SAS_REVEAL = 2;
+  PAIRING_STAGE_SAS_CONFIRM = 3;
+  PAIRING_STAGE_AWAITING_APPROVAL = 4;
+  PAIRING_STAGE_ATTENDED_CHALLENGE = 5;
+  PAIRING_STAGE_ATTENDED_PROOF = 6;
+}
+
+// Host facts sent in the Envelope after connect.
+message HostInfo {
+  string desk_id = 1;
+}
+
+enum PairingResult {
+  PAIRING_RESULT_UNSPECIFIED = 0;
+  PAIRING_RESULT_ACCEPTED = 1;
+  PAIRING_RESULT_REJECTED = 2;
+  PAIRING_RESULT_EXPIRED_TOKEN = 3;
+  PAIRING_RESULT_ALREADY_TRUSTED = 4;
+}
+
+message PairingResponse {
+  PairingResult result = 1;
+  string reason = 2; // human-readable, diagnostic only, never logged with secrets
+  bytes reconnect_challenge = 3;
+  bytes reconnect_host_signature = 4;
+  int64 reconnect_expires_at_unix_ms = 5;
+  PairingStage stage = 6;
+  bytes sas_host_nonce = 7;
+  string host_desk_id = 8;
+  bytes attended_host_nonce = 9; // M5 only, 32 bytes, single use, host discards it after the proof or 30 s
+}
+
+// A device the user has already trusted. Persisted locally by both sides;
+// never uploaded to a server in local mode.
+message TrustedDevice {
+  DeviceIdentity device = 1;
+  bytes public_key = 2;
+  int64 paired_at_unix_ms = 3;
+  int64 last_seen_unix_ms = 4;
+  bool revoked = 5;
+  string desk_id = 6;
+  bool remote_allowed = 7;
+  PairingMethod paired_method = 8;
+}

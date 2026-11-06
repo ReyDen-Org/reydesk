@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+enum VideoCodec {
+  VIDEO_CODEC_UNSPECIFIED = 0;
+  VIDEO_CODEC_H264 = 1;
+  VIDEO_CODEC_HEVC = 2;
+}
+
+message DisplayInfo {
+  string display_id = 1;
+  string friendly_name = 2;
+  uint32 width_px = 3;
+  uint32 height_px = 4;
+  uint32 refresh_rate_hz = 5;
+  bool is_primary = 6;
+}
+
+// What a device can do / has, advertised on connect so both sides
+// negotiate a mutually supported configuration (spec §40). Sent once per
+// session by each side; re-sent if it changes mid-session (e.g. a monitor
+// is unplugged).
+message DeviceCapabilities {
+  repeated VideoCodec supported_video_codecs = 1;
+  uint32 max_width_px = 2;
+  uint32 max_height_px = 3;
+  uint32 max_fps = 4;
+  bool supports_audio = 5;
+  bool supports_gamepad = 6;
+  bool supports_clipboard_sync = 7;
+  bool supports_file_transfer = 8;
+  bool supports_multi_monitor = 9;
+  repeated DisplayInfo displays = 10; // Windows side only; empty on Android
+}
+
+// The configuration both sides agreed to use for this session, computed
+// from the intersection of both DeviceCapabilities plus user settings.
+message NegotiatedConfig {
+  VideoCodec video_codec = 1;
+  uint32 width_px = 2;
+  uint32 height_px = 3;
+  uint32 fps = 4;
+  uint32 target_bitrate_kbps = 5;
+  bool audio_enabled = 6;
+  string active_display_id = 7;
+}

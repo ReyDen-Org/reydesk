@@ -1,0 +1,50 @@
+# Local dev. Joins the shared external "devdb" network (no own Postgres).
+# Create the DB once:  docker exec devdb-postgres psql -U postgres -c "CREATE DATABASE reydesk"
+# Machines without devdb: use compose.standalone.yaml (see README).
+services:
+  rendezvous:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:-13260}:8080"
+    environment:
+      LISTEN_ADDR: ":8080"
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:devdb_root_local@devdb-postgres:5432/reydesk?sslmode=disable}
+      PUBLIC_WS_URL: ${PUBLIC_WS_URL:-ws://127.0.0.1:13260/v1/ws}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
+      STUN_URLS: ${STUN_URLS:-}
+      TURN_URLS: ${TURN_URLS:-}
+      TURN_SECRET: ${TURN_SECRET:-}
+      TURN_RELAY_ENABLED: ${TURN_RELAY_ENABLED:-false}
+      TURN_TTL_S: ${TURN_TTL_S:-600}
+      RECLAIM_UNTIL: ${RECLAIM_UNTIL:-}
+      MAX_CONNECTIONS: ${MAX_CONNECTIONS:-5000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "14" }
+    networks: [devdb]
+
+  # Optional relay, off unless started with:  docker compose --profile turn up -d
+  # Also needs TURN_RELAY_ENABLED=true, TURN_URLS and TURN_SECRET on the rendezvous service
+  # (see turn/README.md). Peer restrictions live in turn/turnserver.conf.
+  turn:
+    profiles: [turn]
+    image: coturn/coturn:4.6.2
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./turn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    command:
+      - -c
+      - /etc/coturn/turnserver.conf
+      - --static-auth-secret=${TURN_SECRET:-}
+      - --realm=${TURN_REALM:-}
+      - --external-ip=${TURN_EXTERNAL_IP:-}
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "14" }
+
+networks:
+  devdb:
+    external: true

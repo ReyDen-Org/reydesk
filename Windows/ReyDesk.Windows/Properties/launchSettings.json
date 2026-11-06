@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ReyDesk.Windows (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ReyDesk.Windows (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

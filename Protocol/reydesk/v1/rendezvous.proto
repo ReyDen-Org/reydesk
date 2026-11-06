@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+// Rendezvous (signaling) service wire format, one RendezvousFrame per
+// WebSocket binary message. See docs/identity-and-pairing.md section 3.3.
+package reydesk.rendezvous.v1;
+
+option csharp_namespace = "ReyDesk.Protocol.Rendezvous.V1";
+option java_package = "ir.reyden.reydesk.protocol.rendezvous.v1";
+option java_multiple_files = true;
+option go_package = "reydesk/rendezvous/gen;rendezvousv1";
+
+message RendezvousFrame {
+  uint64 seq = 1;
+  oneof msg {
+    ServerHello server_hello = 10;
+    ClientAuth client_auth = 11;
+    AuthResult auth_result = 12;
+    IceConfig ice_config = 13;
+    IceConfigRequest ice_config_request = 14;
+    PairSlotCreate pair_slot_create = 20;
+    PairSlotCancel pair_slot_cancel = 21;
+    PairSlotStatus pair_slot_status = 22;
+    OpenPipe open_pipe = 30;
+    IncomingPipe incoming_pipe = 31;
+    PipeDecision pipe_decision = 32;
+    PipeOpened pipe_opened = 33;
+    PipeFailed pipe_failed = 34;
+    PipeData pipe_data = 35;
+    PipeClose pipe_close = 36;
+    Ping ping = 40;
+    Pong pong = 41;
+    RevokeSelf revoke_self = 50;
+    Error error = 60;
+  }
+}
+
+message ServerHello {
+  bytes nonce = 1;           // 32 bytes, single use
+  int64 server_time_ms = 2;
+  uint32 protocol = 3;       // 1
+}
+
+message ClientAuth {
+  bytes spki = 1;            // <= 128 bytes, P-256 SubjectPublicKeyInfo
+  string desk_id = 2;        // may be empty on first registration
+  string platform = 3;
+  string app_version = 4;
+  bytes sig = 5;             // ECDSA P-256 DER over LP("ReyDesk/rendezvous/auth/v1") LP(nonce) LP(public_ws_url) LP(spki) LP(desk_id)
+}
+
+enum AuthError {
+  AUTH_ERROR_NONE = 0;
+  AUTH_ERROR_KEY_MISMATCH = 1;
+  AUTH_ERROR_UNKNOWN_ID = 2;
+  AUTH_ERROR_REVOKED = 3;
+  AUTH_ERROR_RATE_LIMITED = 4;
+  AUTH_ERROR_BAD_SIGNATURE = 5;
+}
+
+message AuthResult {
+  bool ok = 1;
+  string desk_id = 2;
+  AuthError error = 3;
+}
+
+message IceServer {
+  repeated string urls = 1;
+  string username = 2;
+  string credential = 3;
+}
+
+message IceConfig {
+  repeated IceServer ice_servers = 1;
+  int64 expires_at_ms = 2;
+}
+
+message IceConfigRequest {}
+
+message PairSlotCreate {
+  bytes code_hash = 1;       // 32 bytes
+  bytes salt = 2;            // 16 bytes
+  uint32 ttl_s = 3;          // <= 300
+}
+
+message PairSlotCancel {}
+
+message PairSlotStatus {
+  uint32 attempts_left = 1;
+  bool expired = 2;
+}
+
+enum PipePurpose {
+  PIPE_PURPOSE_UNSPECIFIED = 0;
+  PIPE_PURPOSE_PAIR_CODE = 1;
+  PIPE_PURPOSE_PAIR_QR = 2;
+  PIPE_PURPOSE_RECONNECT = 3;
+}
+
+message OpenPipe {
+  string target_desk_id = 1;
+  PipePurpose purpose = 2;
+  string code = 3;           // PAIR_CODE only, 6 digits
+}
+
+message IncomingPipe {
+  string pipe_id = 1;
+  string requester_desk_id = 2;
+  bytes requester_fp = 3;
+  PipePurpose purpose = 4;
+}
+
+message PipeDecision {
+  string pipe_id = 1;
+  bool accept = 2;           // host must answer within 10 s
+}
+
+message PipeOpened {
+  string pipe_id = 1;
+  bytes peer_spki = 2;
+}
+
+enum PipeFailReason {
+  PIPE_FAIL_REASON_UNSPECIFIED = 0;
+  PIPE_FAIL_REASON_UNAVAILABLE = 1;
+  PIPE_FAIL_REASON_RATE_LIMITED = 2;
+  PIPE_FAIL_REASON_BAD_CODE = 3;
+  PIPE_FAIL_REASON_TIMEOUT = 4;
+}
+
+message PipeFailed {
+  string pipe_id = 1;
+  PipeFailReason reason = 2;
+}
+
+message PipeData {
+  string pipe_id = 1;
+  bytes data = 2;            // <= 16 KiB
+}
+
+message PipeClose {
+  string pipe_id = 1;
+}
+
+message Ping {}
+message Pong {}
+
+message RevokeSelf {
+  bytes sig = 1;             // over nonce, domain "ReyDesk/rendezvous/revoke/v1"
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_BAD_FRAME = 1;
+  ERROR_CODE_NOT_AUTHENTICATED = 2;
+  ERROR_CODE_RATE_LIMITED = 3;
+  ERROR_CODE_INTERNAL = 4;
+}
+
+message Error {
+  ErrorCode code = 1;
+  uint32 retry_after_ms = 2;
+}

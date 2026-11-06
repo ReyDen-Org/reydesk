@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReyDesk</string>
+
+    <string name="nav_connection">اتصال</string>
+    <string name="nav_devices">دستگاه‌ها</string>
+    <string name="nav_settings">تنظیمات</string>
+
+    <string name="connection_scan_button">اسکن کد QR</string>
+    <string name="connection_pin_label">یا این پین را وارد کنید</string>
+    <string name="connection_pin_hint">پین</string>
+    <string name="connection_connect_button">اتصال</string>
+    <string name="connection_scanned_title">پیشنهاد جفت‌سازی اسکن شد</string>
+    <string name="connection_scanned_device">دستگاه: %1$s</string>
+    <string name="connection_scan_invalid">این کد QR یک کد جفت‌سازی ReyDesk نیست.</string>
+    <string name="connection_pairing_progress">در حال جفت‌سازی…</string>
+    <string name="connection_pairing_success">با %1$s جفت شد.</string>
+    <string name="connection_pairing_failed">جفت‌سازی ناموفق بود: %1$s</string>
+    <string name="camera_permission_rationale">برای اسکن کد QR نمایش داده‌شده روی رایانه شما، دسترسی به دوربین لازم است.</string>
+    <string name="home_empty_title">در حال جستجوی رایانه‌ها…</string>
+    <string name="home_empty_body">مطمئن شوید ReyDesk روی رایانه ویندوز شما در حال اجراست و هر دو دستگاه به یک شبکه Wi-Fi متصل هستند.</string>
+
+    <string name="session_connecting">در حال اتصال…</string>
+    <string name="session_waiting_for_video">در انتظار تصویر…</string>
+    <string name="session_relay_hint">اتصال مستقیم برقرار نشد. در تنظیمات گزینه اجازه رله را روشن کنید و دوباره وصل شوید.</string>
+    <string name="session_back">بازگشت</string>
+    <string name="session_keyboard">نمایش صفحه‌کلید</string>
+    <string name="session_disconnect">قطع اتصال</string>
+    <string name="session_type_hint">برای ارسال به رایانه تایپ کنید</string>
+
+    <string name="devices_title">هیچ دستگاهی جفت نشده</string>
+    <string name="devices_body">دستگاه‌هایی که جفت می‌کنید اینجا نمایش داده می‌شوند و می‌توانید آن‌ها را تغییر نام دهید، لغو دسترسی کنید یا قطع کنید.</string>
+    <string name="devices_paired_status">جفت‌شده</string>
+
+    <string name="settings_general">عمومی</string>
+    <string name="settings_language">زبان</string>
+    <string name="settings_not_available">هنوز در دسترس نیست</string>
+
+    <string name="settings_streaming">پخش زنده</string>
+    <string name="settings_resolution">کیفیت تصویر</string>
+    <string name="settings_frame_rate">نرخ فریم</string>
+    <string name="settings_quality">کیفیت</string>
+
+    <string name="settings_audio">صدا</string>
+    <string name="settings_pc_audio">صدای رایانه</string>
+
+    <string name="settings_input">ورودی</string>
+    <string name="settings_gestures">ژست‌ها</string>
+    <string name="settings_gamepad">دسته بازی</string>
+
+    <string name="settings_network">شبکه</string>
+    <string name="settings_local_discovery">شناسایی محلی</string>
+    <string name="settings_remote_connectivity">اتصال از راه دور</string>
+
+    <string name="settings_security">امنیت</string>
+    <string name="settings_paired_device_trust">اعتماد دستگاه جفت‌شده</string>
+
+    <string name="settings_diagnostics">عیب‌یابی</string>
+    <string name="settings_connection_logs">گزارش اتصال</string>
+
+    <string name="settings_privacy">حریم خصوصی</string>
+    <string name="settings_data_collected">داده جمع‌آوری‌شده</string>
+    <string name="settings_local_mode_only">از طریق شبکهٔ محلی خود متصل شوید.</string>
+
+    <string name="settings_about">درباره</string>
+    <string name="settings_version">نسخه</string>
+    <string name="settings_copyright">© %1$d ReyDen. منتشرشده با مجوز MIT.</string>
+
+
+    <string name="language_english">انگلیسی</string>
+    <string name="language_persian">فارسی</string>
+    <string name="session_fit_zoom">اندازهٔ کامل · %1$d٪</string>
+    <string name="session_hide_controls">پنهان کردن کنترل‌ها</string>
+    <string name="session_show_controls">کنترل‌ها</string>
+    <string name="session_gesture_hint">تپ برای کلیک · دو انگشت برای زوم و جابه‌جایی</string>
+    <string name="pin_same_network">هر دو دستگاه را به یک شبکهٔ محلی وصل کنید، کامپیوتر را انتخاب کنید و پین فعلی آن را وارد کنید.</string>
+    <string name="pin_discovering">در حال یافتن کامپیوترهای نزدیک…</string>
+    <string name="pin_no_hosts">کامپیوتری پیدا نشد. ReyDesk را روی کامپیوتر باز نگه دارید و دوباره جست‌وجو کنید یا کد QR را اسکن کنید.</string>
+    <string name="pin_discovery_failed">جست‌وجوی محلی در دسترس نیست. دوباره تلاش کنید یا کد QR را اسکن کنید.</string>
+    <string name="pin_find_hosts">جست‌وجوی دوبارهٔ کامپیوترها</string>
+    <string name="pin_host_selected">انتخاب‌شده: %1$s</string>
+    <string name="ui_connection_title">کامپیوترت، همین‌جا</string>
+    <string name="ui_connection_subtitle">به کامپیوتر وصل شوید و کارهایتان را از روی گوشی ادامه دهید.</string>
+    <string name="ui_connection_hint">‏ReyDesk را روی کامپیوتر باز نگه دارید. هر دو دستگاه باید به یک شبکهٔ محلی وصل باشند.</string>
+    <string name="ui_devices_subtitle">کامپیوترهایی که به این گوشی متصل کرده‌ای.</string>
+    <string name="ui_devices_hint">برای اتصال دوباره، به بخش اتصال برو.</string>
+    <string name="ui_devices_empty_body">با کد QR یا PIN به کامپیوتر وصل شوید تا اینجا ذخیره شود.</string>
+    <string name="ui_settings_subtitle">‏ReyDesk را مطابق سلیقهٔ خود تنظیم کنید.</string>
+    <string name="ui_show_planned">قابلیت‌های بعدی</string>
+    <string name="ui_hide_planned">بستن قابلیت‌های بعدی</string>
+    <string name="ui_planned_title">در این نسخه فعال نیست</string>
+    <string name="ui_planned_body">صدا، کنترلر بازی، اتصال از راه دور و تنظیم کیفیت تصویر هنوز در این نسخه فعال نیستند.</string>
+    <string name="ui_scan_hint">دوربین را به کد QR روی کامپیوتر بگیرید.</string>
+    <string name="ui_or">یا</string>
+    <string name="ui_enter_pin">وارد کردن دستی پین</string>
+    <string name="ui_select_pc">یک کامپیوتر نزدیک را انتخاب کنید</string>
+    <string name="ui_nearby_computers">کامپیوترهای نزدیک</string>
+    <string name="ui_nearby">در شبکهٔ محلی شما</string>
+    <string name="ui_pc_help_title">کامپیوتر پیدا نشد؟</string>
+    <string name="ui_add_computer">افزودن کامپیوتر</string>
+    <string name="ui_appearance">ظاهر برنامه</string>
+    <string name="ui_input_controls">ورودی و کنترل</string>
+    <string name="ui_connection_streaming">اتصال و تصویر</string>
+    <string name="ui_about">دربارهٔ ReyDesk</string>
+    <string name="ui_build">ساخت</string>
+    <string name="ui_touch">لمس</string>
+    <string name="ui_reset_view">بازنشانی نما</string>
+    <string name="session_connected_host">متصل به %1$s</string>
+    <string name="session_duration_value">زمان جلسه: %1$s</string>
+    <string name="session_connection_details">وضعیت اتصال</string>
+    <string name="session_hide_header">پنهان کردن نوار جلسه</string>
+    <string name="session_collapse_controls">جمع کردن کنترل‌ها</string>
+    <string name="session_hide_all">پنهان کردن همهٔ کنترل‌ها</string>
+    <string name="session_reveal_hint">برای بازگرداندن کنترل‌ها و نوار جلسه، با سه انگشت روی صفحه تپ کنید. این حرکت روی دسکتاپ کلیک نمی‌کند.</string>
+    <string name="session_drag_controls">برای جابه‌جایی بکشید</string>
+    <string name="session_metric_resolution">وضوح تصویر</string>
+    <string name="session_metric_fps">فریم دریافتی</string>
+    <string name="session_metric_speed">سرعت دریافت</string>
+    <string name="session_metric_ping">پینگ رفت‌وبرگشت</string>
+    <string name="session_metric_loss">بسته‌های ازدست‌رفته</string>
+    <string name="session_metric_jitter">نوسان شبکه</string>
+    <string name="session_metrics_note">اندازه‌گیری زندهٔ WebRTC. خط تیره یعنی هنوز مقداری گزارش نشده است. پینگ، زمان رفت‌وبرگشت شبکه است و تأخیر تصویر نیست.</string>
+    <string name="settings_host_default">پیش‌فرض کامپیوتر</string>
+    <string name="settings_bitrate">سقف بیت‌ریت</string>
+    <string name="settings_next_connection">تغییرات در اتصال بعدی اعمال می‌شوند. محدودیت کامپیوتر ممکن است کیفیت درخواستی را کاهش دهد.</string>
+    <string name="settings_session_controls">کنترل‌های جلسه</string>
+    <string name="settings_control_help">دستگیره را برای جابه‌جایی بکشید. پنل را به یک دستگیرهٔ کوچک و متحرک تبدیل یا کاملاً پنهان کنید. تپ سه‌انگشتی پنل و نوار جلسه را بازمی‌گرداند.</string>
+    <string name="devices_forget">حذف اعتماد</string>
+    <string name="devices_forget_title">اعتماد به این کامپیوتر حذف شود؟</string>
+    <string name="devices_forget_body">%1$s از این گوشی حذف می‌شود. برای جفت‌سازی دوباره، کد QR یا پین آن را وارد کنید.</string>
+    <string name="devices_forget_failed">حذف اعتماد انجام نشد. دوباره تلاش کنید.</string>
+    <string name="session_metric_negotiated">وضوح توافق‌شده</string>
+    <string name="session_metric_fps_limit">سقف نرخ فریم</string>
+    <string name="session_metric_target_rate">نرخ بیت هدف</string>
+    <string name="session_metric_codec">کدک</string>
+    <string name="ring_idle">برای اتصال بزنید</string>
+    <string name="path_lan">شبکه محلی</string>
+    <string name="path_direct">مستقیم</string>
+    <string name="path_relay">رله</string>
+    <string name="internet_title">از طریق اینترنت</string>
+    <string name="internet_desk_id_label">شناسه Desk</string>
+    <string name="internet_code_label">کد جفت‌سازی</string>
+    <string name="internet_id_invalid">این شناسه Desk معتبر نیست. دوباره بررسی کنید.</string>
+    <string name="internet_state_off">خاموش</string>
+    <string name="internet_state_connecting">در حال اتصال</string>
+    <string name="internet_state_online">آنلاین</string>
+    <string name="internet_state_offline">آفلاین</string>
+    <string name="internet_unavailable">اتصال اینترنتی هنوز در دسترس نیست.</string>
+    <string name="sas_title">کد را بررسی کنید</string>
+    <string name="sas_body">پیش از ادامه، هر دو صفحه باید یک کد را نشان دهند.</string>
+    <string name="sas_match">کد یکسان است</string>
+    <string name="sas_mismatch">کد متفاوت است</string>
+    <string name="devices_internet_off">اینترنت خاموش</string>
+    <string name="settings_internet_title">اتصال اینترنتی</string>
+    <string name="settings_internet_enable">اجازه اتصال از اینترنت</string>
+    <string name="settings_internet_server">سرور</string>
+    <string name="settings_key_id">شناسه کلید</string>
+    <string name="settings_relay">اجازه رله</string>
+    <string name="settings_relay_hint">به‌طور پیش‌فرض خاموش است. فقط وقتی روشنش کنید که اتصال مستقیم برقرار نمی‌شود، معمولاً روی داده تلفن همراه: جریان از سرور رلهٔ ReyDen می‌گذرد، ممکن است کندتر باشد ولی سرتاسری رمزگذاری‌شده می‌ماند. روی همان Wi-Fi لازم نیست.</string>
+    <string name="settings_internet_privacy">صفحه شما فقط با دستگاه‌هایی که جفت کرده‌اید به اشتراک گذاشته می‌شود. بدون تأیید شما کسی نمی‌تواند وصل شود.</string>
+    <string name="settings_licences_title">مجوزهای متن‌باز</string>
+    <string name="settings_licences_body">‏ReyDesk با مجوز MIT متن‌باز است و از اجزای متن‌باز دیگری هم استفاده می‌کند که هر کدام مجوز خودشان را دارند.</string>
+    <string name="settings_licences_show">نمایش متن مجوزها</string>
+    <string name="settings_licences_hide">پنهان کردن متن مجوزها</string>
+    <string name="settings_reyden_service">ReyDen</string>
+    <string name="files_bytes">بایت</string>
+    <string name="settings_rendezvous_label">نشانی سرور</string>
+    <string name="settings_rendezvous_hint">برای خاموش ماندن اتصال اینترنتی خالی بگذارید. نشانی &#x2066;wss://&#x2069; سرویس ReyDen را وارد کنید.</string>
+    <string name="settings_rendezvous_save">ذخیره نشانی</string>
+    <string name="settings_rendezvous_invalid">نشانی باید با &#x2066;wss://&#x2069; شروع شود.</string>
+    <string name="internet_turn_on">برای اتصال با شناسه Desk، اتصال اینترنتی را در تنظیمات روشن کنید.</string>
+    <string name="settings_credit_prefix">طراحی و توسعه:</string>
+    <string name="settings_advanced">پیشرفته</string>
+    <string name="settings_rendezvous_reset">بازنشانی به پیش‌فرض</string>
+    <string name="settings_rendezvous_effective">اتصال به</string>
+    <string name="internet_state_unreachable">سرور در دسترس نیست</string>
+    <string name="settings_internet_privacy_host">دستگاه‌های شما از طریق سرور ReyDesk (%1$s) وصل می‌شوند که فقط به آن‌ها کمک می‌کند همدیگر را پیدا کنند. صفحه شما فقط با دستگاه‌هایی که جفت کرده‌اید به اشتراک گذاشته می‌شود و بدون تأیید شما کسی نمی‌تواند وصل شود.</string>
+    <string name="settings_rendezvous_hint_default">برای استفاده از سرور پیش‌فرض ReyDesk خالی بگذارید.</string>
+</resources>

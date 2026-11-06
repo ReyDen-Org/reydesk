@@ -1,0 +1,14 @@
+syntax = "proto3";
+package reydesk.v1;
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+// Bounded binary payload on the authenticated ordered control channel.
+// Sender waits for matching progress acknowledgement before another chunk.
+message FileTransferChunk {
+  string transfer_id = 1;
+  uint64 offset = 2;
+  bytes data = 3; // maximum 16384 bytes
+  bool final = 4;
+}

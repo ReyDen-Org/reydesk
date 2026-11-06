@@ -1,0 +1,1097 @@
+{
+  "notes": [
+    "ReyDesk v2 identity test vectors. Source of truth: docs/REYDESK_V2_IDENTITY_REMOTE.md sections 1.2, 1.3, 1.6, 2.1-2.4, 3.2, 3.3, 3.9. Task T2.",
+    "Every value was computed by two independent implementations (Python stdlib with its own P-256 math and RFC 6979 signing; Node 24 using OpenSSL via node:crypto) and the outputs were deep-compared (0 differences) before this file was written.",
+    "TEST KEYS ONLY: private_scalar_hex values are published here on purpose. Never ship or trust them.",
+    "Hex is lowercase, no separators. Strings are UTF-8. 'empty' means a zero-length byte string.",
+    "LP(x) = 4-byte big-endian unsigned length of x, then x. Identical to PairingSignature.BuildReconnectPayload. A string field is its UTF-8 bytes.",
+    "Crockford base32 alphabet: 0123456789ABCDEFGHJKMNPQRSTVWXYZ (value = index). Bits are read most significant first; char i takes 5 bits.",
+    "SPKI = DER SubjectPublicKeyInfo of the P-256 key, uncompressed point, 91 bytes: 3059301306072a8648ce3d020106082a8648ce3d030107034200 || 04 || X(32) || Y(32).",
+    "Key fingerprint = SHA-256(SPKI), 32 bytes.",
+    "Key ID = top 60 bits of the fingerprint = (big-endian uint64 of fingerprint[0..7]) >> 4, as 12 Crockford chars. key_id_display = groups of 4 joined by '-'; the UI prefixes the label 'KEY ' (not part of the value). Key ID has no check char.",
+    "fingerprint_display = 256 fingerprint bits followed by 4 zero bits = 260 bits = 52 Crockford chars, 13 groups of 4 joined by one ASCII space.",
+    "Desk ID = 11 data chars (55 bits, data_bits_hex < 2^55, char 0 = top 5 bits) + 1 check char. check_value = (sum over i=0..10 of (i+1) * value(data[i])) mod 31; check_char = alphabet[check_value], so it is never 'Z'. display = 3 groups of 4 joined by '-'.",
+    "Desk ID parse, per input code point, in this order: (1) drop '-' U+002D, ' ' U+0020, and bidi controls U+200E U+200F U+2066 U+2067 U+2068 U+2069; (2) map Persian digits U+06F0-U+06F9 and Arabic-Indic digits U+0660-U+0669 to ASCII 0-9 (no other digit sets: do NOT use char.GetNumericValue, which accepts superscripts, fractions and fullwidth digits); (3) uppercase ASCII a-z only (no culture-sensitive ToUpper); (4) I and L -> 1, O -> 0, U dropped; (5) anything not in the alphabet -> BAD_CHAR. Then length != 12 -> BAD_LENGTH, then check char mismatch -> BAD_CHECK. Error precedence: BAD_CHAR, BAD_LENGTH, BAD_CHECK. canonical = the 12 uppercase chars without separators; this is the form stored, sent on the wire, signed and hashed.",
+    "Known limit (by design, spec 1.3): a 0 <-> Z substitution is not detected (value difference 31). The vector labelled 'undetectable' must parse as ok.",
+    "Remote code parse (RemoteCode.normalize): drop the same separators and bidi controls as Desk ID, map the same digit sets, anything else -> BAD_CHAR, then exactly 6 ASCII digits or BAD_LENGTH. Leading zeros are significant.",
+    "QR token = base64url (RFC 4648 section 5) of 16 random bytes, no '=' padding, 22 chars.",
+    "SAS commitment = SHA-256(UTF8('ReyDesk/sas-commit/v1') || n_c): plain concatenation, NO length prefix (spec 2.2 step 1). n_c and n_h are 32 bytes. Hosts compare with a fixed-time equality.",
+    "SAS transcript = LP('ReyDesk/sas/v1') LP(host_spki) LP(client_spki) LP(n_h) LP(n_c); h = SHA-256(transcript); sas_value = (big-endian uint32 of h[0..3]) mod 1000000; sas_digits = sas_value zero-padded to 6 ASCII digits; sas_display = first 3 digits, one ASCII space, last 3 (UI may localize digits).",
+    "Pair v2 payload = LP('ReyDesk/pair/v2') LP(method) LP(token) LP(host_spki) LP(client_spki) LP(requester_device_id) LP(host_desk_id) LP(n_h) LP(n_c). method = UTF-8 decimal text of the PairingMethod enum number (e.g. '4' for PAIRING_METHOD_REMOTE_CODE). token = QR token text for LAN_QR/REMOTE_QR, the canonical 6-digit code for REMOTE_CODE, empty otherwise. requester_device_id = DeviceIdentity.device_id string exactly as sent. host_desk_id = canonical host Desk ID when the request travels over a rendezvous pipe (the pipe target), empty on the LAN medium (even if the QR or TXT carried a Desk ID). n_h, n_c = the SAS nonces for SAS methods (LAN_SAS, REMOTE_CODE), empty otherwise. Method 5 (TRUSTED_ATTENDED) is no longer a pair/v2 method: it uses attended_v3 (below).",
+    "attended_v3 payload (M5, spec 2.8) = LP('ReyDesk/attended/client/v3') LP(host_spki) LP(client_spki) LP(requester_device_id) LP(host_desk_id) LP(requester_desk_id) LP(n_h) LP(n_c). Desk IDs both empty on LAN, both canonical over a pipe; n_h and n_c exactly 32 bytes. n_h/n_c test values = SHA-256(UTF8('ReyDesk/test-vector/attended/n_h/<i>')) and SHA-256(UTF8('ReyDesk/test-vector/attended/n_c/<i>')). The attended_v3_payload rows (2026-11-05, T18 M2 fix) were computed by two independent implementations (Python stdlib P-256 with RFC 6979, Node/OpenSSL); payloads and hashes agree byte for byte, signatures were produced by Python and verified by Node, and every negative was checked by both.",
+    "Rendezvous auth payload = LP('ReyDesk/rendezvous/auth/v1') LP(server_nonce 32 bytes) LP(public_ws_url UTF-8, exact PUBLIC_WS_URL string) LP(spki) LP(desk_id canonical, empty on first registration).",
+    "RevokeSelf payload = LP('ReyDesk/rendezvous/revoke/v1') LP(server_nonce), where server_nonce is the ServerHello nonce of the current authenticated connection.",
+    "Pair slot code_hash = SHA-256(LP(desk_id canonical) LP(code 6 ASCII digits) LP(salt 16 bytes)).",
+    "Signatures: ECDSA P-256 over SHA-256 of the payload, DER (X9.62 Ecdsa-Sig-Value) encoding, NOT IEEE P1363 r||s. Vectors were signed with RFC 6979 deterministic k; implementations need not produce the same bytes (random k is fine) but must verify every signature_checks row to exactly expect_valid. High-S signatures are not rejected.",
+    "TURN REST credential (server only): username = '<expiry_unix decimal>:<first 16 lowercase hex chars of the key fingerprint>'; credential = standard base64 (with padding) of HMAC-SHA1(key = UTF-8 TURN_SECRET, msg = UTF-8 username).",
+    "Groups: keys (named key pairs referenced by host_key/client_key/key fields), desk_id_from_bits, desk_id_parse, key_id_from_fingerprint, sas, sas_commitment_check, pair_v2_payload, attended_v3_payload, rendezvous_auth_payload, revoke_self_payload, pair_slot_code_hash, remote_code_parse, qr_token, turn_credential, signature_checks. input_codepoints lists the input's Unicode code points so editors cannot silently change them."
+  ],
+  "format_version": 1,
+  "spec": "docs/REYDESK_V2_IDENTITY_REMOTE.md",
+  "generated": "2026-11-05",
+  "keys": {
+    "host": {
+      "private_scalar_hex": "51a95bbc6c2fa8bd9ba85429ea60a431b855dab911958659229d7c07c7366439",
+      "spki_der_hex": "3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b451295",
+      "fingerprint_hex": "239e320f27a75db0b7997e1cfd5f91b1f402575ac69c05cfa6f7e2da9614d0d1",
+      "key_id": "4EF343S7MXEV",
+      "key_id_display": "4EF3-43S7-MXEV",
+      "fingerprint_display": "4EF3 43S7 MXEV 1DWS FREF TQWH P7T0 4NTT RTE0 BKX6 YZHD N5GM T38G"
+    },
+    "client": {
+      "private_scalar_hex": "7d499a3c3ab268dd899cb0f7a18dc2054701bc92a95ff8f7933752b99b90df38",
+      "spki_der_hex": "3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be3",
+      "fingerprint_hex": "5cdfdafc1f0a3037a06e1fcc6ae10bf15e74abca90f7bd62480a0fcab174cad9",
+      "key_id": "BKFXNZ0Z18R3",
+      "key_id_display": "BKFX-NZ0Z-18R3",
+      "fingerprint_display": "BKFX NZ0Z 18R3 F83E 3Z66 NR8B Y5F7 9AYA J3VV TRJ8 187W NCBM SBCG"
+    },
+    "attacker": {
+      "private_scalar_hex": "4205d79e9ff3152b6252bda4a51f05c2d552b4d387a2d8f5053d0797dc9f3343",
+      "spki_der_hex": "3059301306072a8648ce3d020106082a8648ce3d03010703420004c55eeda92068f545aa1be2512338489e7d9dbcbf7f0b0002dd495089a004eb2b11359663367a3915b419553b5a32328e9b94983ff486d4f1b081934499d6e90e",
+      "fingerprint_hex": "99cb5e20201a6e678cd1aabba69db2ff644fd2fd74a42e64caf20646a9a15ef4",
+      "key_id": "K75NW81039Q6",
+      "key_id_display": "K75N-W810-39Q6",
+      "fingerprint_display": "K75N W810 39Q6 F36H NAXT D7DJ ZXJ4 ZMQX EJJ2 WS6A Y834 DAD1 BVT0"
+    }
+  },
+  "desk_id_from_bits": [
+    {
+      "data_bits_hex": "00000000000000",
+      "data": "00000000000",
+      "check_value": 0,
+      "check_char": "0",
+      "desk_id": "000000000000",
+      "display": "0000-0000-0000"
+    },
+    {
+      "data_bits_hex": "7fffffffffffff",
+      "data": "ZZZZZZZZZZZ",
+      "check_value": 0,
+      "check_char": "0",
+      "desk_id": "ZZZZZZZZZZZ0",
+      "display": "ZZZZ-ZZZZ-ZZZ0"
+    },
+    {
+      "data_bits_hex": "4a0c77690daae1",
+      "data": "JGCEXMGVAQ1",
+      "check_value": 12,
+      "check_char": "C",
+      "desk_id": "JGCEXMGVAQ1C",
+      "display": "JGCE-XMGV-AQ1C"
+    },
+    {
+      "data_bits_hex": "1bb7a0e4a443ef",
+      "data": "6XQM3JA8GZF",
+      "check_value": 4,
+      "check_char": "4",
+      "desk_id": "6XQM3JA8GZF4",
+      "display": "6XQM-3JA8-GZF4"
+    },
+    {
+      "data_bits_hex": "4d102728c26ca0",
+      "data": "K8G4WMC4V50",
+      "check_value": 24,
+      "check_char": "R",
+      "desk_id": "K8G4WMC4V50R",
+      "display": "K8G4-WMC4-V50R"
+    }
+  ],
+  "desk_id_parse": [
+    {
+      "label": "canonical",
+      "input": "JGCEXMGVAQ1C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0043"
+      ],
+      "ok": true,
+      "canonical": "JGCEXMGVAQ1C",
+      "error": null
+    },
+    {
+      "label": "lowercase with display dashes",
+      "input": "jgce-xmgv-aq1c",
+      "input_codepoints": [
+        "006A",
+        "0067",
+        "0063",
+        "0065",
+        "002D",
+        "0078",
+        "006D",
+        "0067",
+        "0076",
+        "002D",
+        "0061",
+        "0071",
+        "0031",
+        "0063"
+      ],
+      "ok": true,
+      "canonical": "JGCEXMGVAQ1C",
+      "error": null
+    },
+    {
+      "label": "spaces instead of dashes",
+      "input": "JGCE XMGV AQ1C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0020",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0020",
+        "0041",
+        "0051",
+        "0031",
+        "0043"
+      ],
+      "ok": true,
+      "canonical": "JGCEXMGVAQ1C",
+      "error": null
+    },
+    {
+      "label": "LTR isolate wrapped display form (copied from Persian UI)",
+      "input": "⁦JGCE-XMGV-AQ1C⁩",
+      "input_codepoints": [
+        "2066",
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "002D",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "002D",
+        "0041",
+        "0051",
+        "0031",
+        "0043",
+        "2069"
+      ],
+      "ok": true,
+      "canonical": "JGCEXMGVAQ1C",
+      "error": null
+    },
+    {
+      "label": "Persian digits",
+      "input": "JGCEXMGVAQ۱C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "06F1",
+        "0043"
+      ],
+      "ok": true,
+      "canonical": "JGCEXMGVAQ1C",
+      "error": null
+    },
+    {
+      "label": "Arabic-Indic digits",
+      "input": "JGCEXMGVAQ١C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0661",
+        "0043"
+      ],
+      "ok": true,
+      "canonical": "JGCEXMGVAQ1C",
+      "error": null
+    },
+    {
+      "label": "I/L -> 1 and O -> 0 substitution",
+      "input": "FB6B7VlONZ2J",
+      "input_codepoints": [
+        "0046",
+        "0042",
+        "0036",
+        "0042",
+        "0037",
+        "0056",
+        "006C",
+        "004F",
+        "004E",
+        "005A",
+        "0032",
+        "004A"
+      ],
+      "ok": true,
+      "canonical": "FB6B7V10NZ2J",
+      "error": null
+    },
+    {
+      "label": "U is dropped (then length decides)",
+      "input": "JGCEXMUGVAQ1C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0055",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0043"
+      ],
+      "ok": true,
+      "canonical": "JGCEXMGVAQ1C",
+      "error": null
+    },
+    {
+      "label": "too short (11)",
+      "input": "JGCEXMGVAQ1",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_LENGTH"
+    },
+    {
+      "label": "too long (13)",
+      "input": "JGCEXMGVAQ1C0",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0043",
+        "0030"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_LENGTH"
+    },
+    {
+      "label": "empty",
+      "input": "",
+      "input_codepoints": [],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_LENGTH"
+    },
+    {
+      "label": "only separators",
+      "input": "--- -",
+      "input_codepoints": [
+        "002D",
+        "002D",
+        "002D",
+        "0020",
+        "002D"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_LENGTH"
+    },
+    {
+      "label": "U makes it 11 after drop",
+      "input": "JGCEXMGVAQ1U",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0055"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_LENGTH"
+    },
+    {
+      "label": "invalid symbol",
+      "input": "JGCEX*GVAQ1C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "002A",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0043"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHAR"
+    },
+    {
+      "label": "superscript two (GetNumericValue would accept, rejected here)",
+      "input": "JGCEX²GVAQ1C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "00B2",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0043"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHAR"
+    },
+    {
+      "label": "fullwidth digit (not in the accepted digit sets)",
+      "input": "JGCEX１GVAQ1C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "FF11",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0043"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHAR"
+    },
+    {
+      "label": "bad check char (single substitution at index 3)",
+      "input": "JGCFXMGVAQ1C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0046",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0043"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHECK"
+    },
+    {
+      "label": "bad check char (last char changed)",
+      "input": "JGCEXMGVAQ1D",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0044"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHECK"
+    },
+    {
+      "label": "check char Z (value 31 never produced)",
+      "input": "JGCEXMGVAQ1Z",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "004D",
+        "0047",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "005A"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHECK"
+    },
+    {
+      "label": "adjacent swap of index 5 and 6",
+      "input": "JGCEXGMVAQ1C",
+      "input_codepoints": [
+        "004A",
+        "0047",
+        "0043",
+        "0045",
+        "0058",
+        "0047",
+        "004D",
+        "0056",
+        "0041",
+        "0051",
+        "0031",
+        "0043"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHECK"
+    },
+    {
+      "label": "0 -> Z at index 0 (undetectable by design, stays valid)",
+      "input": "Z00000000000",
+      "input_codepoints": [
+        "005A",
+        "0030",
+        "0030",
+        "0030",
+        "0030",
+        "0030",
+        "0030",
+        "0030",
+        "0030",
+        "0030",
+        "0030",
+        "0030"
+      ],
+      "ok": true,
+      "canonical": "Z00000000000",
+      "error": null
+    },
+    {
+      "label": "spec section 1.2 display example (illustrative only, its check char is wrong)",
+      "input": "7KQ4-MZ2P-X9DA",
+      "input_codepoints": [
+        "0037",
+        "004B",
+        "0051",
+        "0034",
+        "002D",
+        "004D",
+        "005A",
+        "0032",
+        "0050",
+        "002D",
+        "0058",
+        "0039",
+        "0044",
+        "0041"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHECK"
+    }
+  ],
+  "key_id_from_fingerprint": [
+    {
+      "fingerprint_hex": "0000000000000000000000000000000000000000000000000000000000000000",
+      "key_id": "000000000000",
+      "key_id_display": "0000-0000-0000",
+      "fingerprint_display": "0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000"
+    },
+    {
+      "fingerprint_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "key_id": "ZZZZZZZZZZZZ",
+      "key_id_display": "ZZZZ-ZZZZ-ZZZZ",
+      "fingerprint_display": "ZZZZ ZZZZ ZZZZ ZZZZ ZZZZ ZZZZ ZZZZ ZZZZ ZZZZ ZZZZ ZZZZ ZZZZ ZZZG"
+    },
+    {
+      "fingerprint_hex": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "key_id": "04HMASW9NF6Y",
+      "key_id_display": "04HM-ASW9-NF6Y",
+      "fingerprint_display": "04HM ASW9 NF6Y Y093 8NKR KAYD XW0J 6HB7 H6NW VVR1 4D2P F2DB SQQG"
+    }
+  ],
+  "sas": [
+    {
+      "label": "set 1",
+      "host_key": "host",
+      "client_key": "client",
+      "n_h_hex": "d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c",
+      "n_c_hex": "4c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "commitment_preimage_hex": "5265794465736b2f7361732d636f6d6d69742f76314c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "commitment_hex": "e7e7540cfc988e7f24ce47c58d37277d346c20f0e2718d1945a5deaf71ea6b0c",
+      "transcript_hex": "0000000e5265794465736b2f7361732f76310000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be300000020d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c000000204c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "h_hex": "5ed119eb4bcf18a7e58d0e32f41307a05da880a1dd5b410f4c1b2df5d6627406",
+      "sas_value": 761963,
+      "sas_digits": "761963",
+      "sas_display": "761 963"
+    },
+    {
+      "label": "set 2",
+      "host_key": "host",
+      "client_key": "client",
+      "n_h_hex": "dd5e1d37944ba7207930852ebfc7205161761f998473b90550f7aa9528125b74",
+      "n_c_hex": "4b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "commitment_preimage_hex": "5265794465736b2f7361732d636f6d6d69742f76314b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "commitment_hex": "299c5c31d05a650fa15005eab1bff9ebf691c3ad2dec31fcd52debb3693a9baf",
+      "transcript_hex": "0000000e5265794465736b2f7361732f76310000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be300000020dd5e1d37944ba7207930852ebfc7205161761f998473b90550f7aa9528125b74000000204b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "h_hex": "bcce9df1353a94d1375d83bfcb2358ca0871700d02be1ccc1bbf371fdc52d735",
+      "sas_value": 657457,
+      "sas_digits": "657457",
+      "sas_display": "657 457"
+    },
+    {
+      "label": "SAS below 100000 (zero padding), n_c = SHA256('ReyDesk/test-vector/n_c-low/0')",
+      "host_key": "host",
+      "client_key": "client",
+      "n_h_hex": "d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c",
+      "n_c_hex": "bc9bf85c6809a2b68e9758c024a066ac83031e017db87c988018fa28d7466f98",
+      "commitment_preimage_hex": "5265794465736b2f7361732d636f6d6d69742f7631bc9bf85c6809a2b68e9758c024a066ac83031e017db87c988018fa28d7466f98",
+      "commitment_hex": "bec5e92553ef3d19011275adc0cc7cafad414def1531408a01feb2c8d19ce627",
+      "transcript_hex": "0000000e5265794465736b2f7361732f76310000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be300000020d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c00000020bc9bf85c6809a2b68e9758c024a066ac83031e017db87c988018fa28d7466f98",
+      "h_hex": "515d464f7fd013c04d072ea879e62e82ef5435a68fe2582dda75822a55762bee",
+      "sas_value": 67343,
+      "sas_digits": "067343",
+      "sas_display": "067 343"
+    },
+    {
+      "label": "MITM: phone pinned attacker key instead of host key (must differ from set 1)",
+      "host_key": "attacker",
+      "client_key": "client",
+      "n_h_hex": "d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c",
+      "n_c_hex": "4c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "commitment_preimage_hex": "5265794465736b2f7361732d636f6d6d69742f76314c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "commitment_hex": "e7e7540cfc988e7f24ce47c58d37277d346c20f0e2718d1945a5deaf71ea6b0c",
+      "transcript_hex": "0000000e5265794465736b2f7361732f76310000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004c55eeda92068f545aa1be2512338489e7d9dbcbf7f0b0002dd495089a004eb2b11359663367a3915b419553b5a32328e9b94983ff486d4f1b081934499d6e90e0000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be300000020d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c000000204c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "h_hex": "fc5d9d1198eee9b1d60a712e6c554386a7174f9fb00ba7e282b1d522924548d7",
+      "sas_value": 993489,
+      "sas_digits": "993489",
+      "sas_display": "993 489"
+    }
+  ],
+  "sas_commitment_check": [
+    {
+      "label": "matching reveal",
+      "commitment_hex": "e7e7540cfc988e7f24ce47c58d37277d346c20f0e2718d1945a5deaf71ea6b0c",
+      "revealed_n_c_hex": "4c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "ok": true
+    },
+    {
+      "label": "different nonce revealed",
+      "commitment_hex": "e7e7540cfc988e7f24ce47c58d37277d346c20f0e2718d1945a5deaf71ea6b0c",
+      "revealed_n_c_hex": "4b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "ok": false
+    },
+    {
+      "label": "commitment computed with LP framing (wrong, spec uses plain concatenation)",
+      "commitment_hex": "d1a67870f478757df1106d3df4674f406473be694646d818a554990f0a7a4fe8",
+      "revealed_n_c_hex": "4c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "ok": false
+    }
+  ],
+  "pair_v2_payload": [
+    {
+      "label": "M1 LAN QR (LAN medium: host_desk_id empty)",
+      "method": 1,
+      "method_field_utf8": "1",
+      "token": "8tNbziBV5VkBs0f83BIivw",
+      "host_key": "host",
+      "client_key": "client",
+      "requester_device_id": "6f9619ff-8b86-4d11-b42d-00c04fc964ff",
+      "host_desk_id": "",
+      "n_h_hex": "",
+      "n_c_hex": "",
+      "payload_hex": "0000000f5265794465736b2f706169722f763200000001310000001638744e627a69425635566b42733066383342496976770000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d303063303466633936346666000000000000000000000000",
+      "payload_sha256_hex": "52a53fc187700d94b0ce562ed596dcbeab406be92add1354819975732405d0bc"
+    },
+    {
+      "label": "M2 LAN nearby SAS",
+      "method": 2,
+      "method_field_utf8": "2",
+      "token": "",
+      "host_key": "host",
+      "client_key": "client",
+      "requester_device_id": "6f9619ff-8b86-4d11-b42d-00c04fc964ff",
+      "host_desk_id": "",
+      "n_h_hex": "d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c",
+      "n_c_hex": "4c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "payload_hex": "0000000f5265794465736b2f706169722f76320000000132000000000000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000000000020d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c000000204c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "payload_sha256_hex": "15bbab32b4305d6703fb246bf637182da8cce1d30873a3358b447a3819074b8d"
+    },
+    {
+      "label": "M3 remote QR over pipe (host_desk_id = pipe target)",
+      "method": 3,
+      "method_field_utf8": "3",
+      "token": "8tNbziBV5VkBs0f83BIivw",
+      "host_key": "host",
+      "client_key": "client",
+      "requester_device_id": "6f9619ff-8b86-4d11-b42d-00c04fc964ff",
+      "host_desk_id": "JGCEXMGVAQ1C",
+      "n_h_hex": "",
+      "n_c_hex": "",
+      "payload_hex": "0000000f5265794465736b2f706169722f763200000001330000001638744e627a69425635566b42733066383342496976770000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000000000000",
+      "payload_sha256_hex": "48b96d40c412fad92e6f6c9bb32f300f6924c3a5703e26d6994c1690ac494d19"
+    },
+    {
+      "label": "M4 remote typed code over pipe",
+      "method": 4,
+      "method_field_utf8": "4",
+      "token": "048213",
+      "host_key": "host",
+      "client_key": "client",
+      "requester_device_id": "6f9619ff-8b86-4d11-b42d-00c04fc964ff",
+      "host_desk_id": "JGCEXMGVAQ1C",
+      "n_h_hex": "dd5e1d37944ba7207930852ebfc7205161761f998473b90550f7aa9528125b74",
+      "n_c_hex": "4b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "payload_hex": "0000000f5265794465736b2f706169722f76320000000134000000063034383231330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d47564151314300000020dd5e1d37944ba7207930852ebfc7205161761f998473b90550f7aa9528125b74000000204b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "payload_sha256_hex": "5031cf2b0d87f34816d446414a8571cc01a89c5ce91c1af9e9f512f4bdb67a3f"
+    }
+  ],
+  "attended_v3_payload": [
+    {
+      "label": "A1 M5 attended v3 over LAN (both Desk IDs empty)",
+      "host_key": "host",
+      "client_key": "client",
+      "requester_device_id": "6f9619ff-8b86-4d11-b42d-00c04fc964ff",
+      "host_desk_id": "",
+      "requester_desk_id": "",
+      "n_h_hex": "90e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d64165",
+      "n_c_hex": "a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d30306330346663393634666600000000000000000000002090e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d6416500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "payload_sha256_hex": "1069bff6688d3fa6ac30ace1abd81fcceb6226dcffaaa0fc756f29adf84a3a5c"
+    },
+    {
+      "label": "A2 M5 attended v3 over pipe",
+      "host_key": "host",
+      "client_key": "client",
+      "requester_device_id": "6f9619ff-8b86-4d11-b42d-00c04fc964ff",
+      "host_desk_id": "JGCEXMGVAQ1C",
+      "requester_desk_id": "6XQM3JA8GZF4",
+      "n_h_hex": "90e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d64165",
+      "n_c_hex": "a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000c3658514d334a4138475a46340000002090e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d6416500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "payload_sha256_hex": "f56819fe42fe035817ff642230778c6175c4d9273dfb36561e888e6f8cc7129f"
+    },
+    {
+      "label": "A3 M5 attended v3 over pipe, fresh n_h",
+      "host_key": "host",
+      "client_key": "client",
+      "requester_device_id": "6f9619ff-8b86-4d11-b42d-00c04fc964ff",
+      "host_desk_id": "JGCEXMGVAQ1C",
+      "requester_desk_id": "6XQM3JA8GZF4",
+      "n_h_hex": "0dc0f652f8cc258749a213c7077ef49de3753da63f0ca85a5461e9866688ccd5",
+      "n_c_hex": "a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000c3658514d334a4138475a4634000000200dc0f652f8cc258749a213c7077ef49de3753da63f0ca85a5461e9866688ccd500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "payload_sha256_hex": "78d6de709b164bbf9dd0b708a696e72cfecf7ac5b6e5cc8a7211ae9e83af351c"
+    }
+  ],
+  "rendezvous_auth_payload": [
+    {
+      "label": "first registration (desk_id empty)",
+      "nonce_hex": "9806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04",
+      "public_ws_url": "wss://rendezvous.example.test/v1/ws",
+      "key": "client",
+      "desk_id": "",
+      "payload_hex": "0000001a5265794465736b2f72656e64657a766f75732f617574682f7631000000209806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04000000237773733a2f2f72656e64657a766f75732e6578616d706c652e746573742f76312f77730000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be300000000",
+      "payload_sha256_hex": "11c85ed978369458da82454cdfdc9d9392f14db60ab16336477df82a95a2e432"
+    },
+    {
+      "label": "host with stored Desk ID",
+      "nonce_hex": "9806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04",
+      "public_ws_url": "wss://rendezvous.example.test/v1/ws",
+      "key": "host",
+      "desk_id": "JGCEXMGVAQ1C",
+      "payload_hex": "0000001a5265794465736b2f72656e64657a766f75732f617574682f7631000000209806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04000000237773733a2f2f72656e64657a766f75732e6578616d706c652e746573742f76312f77730000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000000c4a474345584d475641513143",
+      "payload_sha256_hex": "c40556d8a9652346c46f6bafa8f2b001204ebf3842c139209ca51adb7f366bb3"
+    }
+  ],
+  "revoke_self_payload": [
+    {
+      "nonce_hex": "9806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04",
+      "key": "host",
+      "payload_hex": "0000001c5265794465736b2f72656e64657a766f75732f7265766f6b652f7631000000209806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04",
+      "payload_sha256_hex": "4587258a651f5eb49fded77853d9759344d3abe64ca932d0dfa25f78dbf6be85"
+    }
+  ],
+  "pair_slot_code_hash": [
+    {
+      "desk_id": "JGCEXMGVAQ1C",
+      "code": "048213",
+      "salt_hex": "61b285e62054c3614950bacba0e909e0",
+      "preimage_hex": "0000000c4a474345584d475641513143000000063034383231330000001061b285e62054c3614950bacba0e909e0",
+      "code_hash_hex": "b4158134af5edfab91c9a1d141c971c77c68fabbbec2800a1168b8e304e25742"
+    }
+  ],
+  "remote_code_parse": [
+    {
+      "label": "ascii",
+      "input": "048213",
+      "input_codepoints": [
+        "0030",
+        "0034",
+        "0038",
+        "0032",
+        "0031",
+        "0033"
+      ],
+      "ok": true,
+      "canonical": "048213",
+      "error": null
+    },
+    {
+      "label": "Persian digits",
+      "input": "۰۴۸۲۱۳",
+      "input_codepoints": [
+        "06F0",
+        "06F4",
+        "06F8",
+        "06F2",
+        "06F1",
+        "06F3"
+      ],
+      "ok": true,
+      "canonical": "048213",
+      "error": null
+    },
+    {
+      "label": "Arabic-Indic digits with space",
+      "input": "٠٤٨ ٢١٣",
+      "input_codepoints": [
+        "0660",
+        "0664",
+        "0668",
+        "0020",
+        "0662",
+        "0661",
+        "0663"
+      ],
+      "ok": true,
+      "canonical": "048213",
+      "error": null
+    },
+    {
+      "label": "too short",
+      "input": "04821",
+      "input_codepoints": [
+        "0030",
+        "0034",
+        "0038",
+        "0032",
+        "0031"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_LENGTH"
+    },
+    {
+      "label": "too long",
+      "input": "0482130",
+      "input_codepoints": [
+        "0030",
+        "0034",
+        "0038",
+        "0032",
+        "0031",
+        "0033",
+        "0030"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_LENGTH"
+    },
+    {
+      "label": "letter",
+      "input": "04821A",
+      "input_codepoints": [
+        "0030",
+        "0034",
+        "0038",
+        "0032",
+        "0031",
+        "0041"
+      ],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_CHAR"
+    },
+    {
+      "label": "empty",
+      "input": "",
+      "input_codepoints": [],
+      "ok": false,
+      "canonical": null,
+      "error": "BAD_LENGTH"
+    }
+  ],
+  "qr_token": [
+    {
+      "bytes_hex": "f2d35bce2055e55901b347fcdc1222bf",
+      "token": "8tNbziBV5VkBs0f83BIivw"
+    },
+    {
+      "bytes_hex": "00000000000000000000000000000000",
+      "token": "AAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "bytes_hex": "ffffffffffffffffffffffffffffffff",
+      "token": "_____________________w"
+    }
+  ],
+  "turn_credential": [
+    {
+      "expiry_unix": 1767225600,
+      "key": "client",
+      "key_fp_hex16": "5cdfdafc1f0a3037",
+      "secret": "test-turn-secret-not-real",
+      "username": "1767225600:5cdfdafc1f0a3037",
+      "credential": "JF21PUsDkk14ApSImT16f4YecjA="
+    }
+  ],
+  "signature_checks": [
+    {
+      "group": "pair_v2_payload",
+      "label": "M1 LAN QR (LAN medium: host_desk_id empty)",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f763200000001310000001638744e627a69425635566b42733066383342496976770000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d303063303466633936346666000000000000000000000000",
+      "signature_der_hex": "3045022100b8ea57be42f3f653f147a8fb0fa461216694e17fd24bda9be6040076c12ef156022042909314ee7dbe13f84f789fcb407b9ac2207d3fb7b9c4ec7a42f9dfc274fd54",
+      "expect_valid": true
+    },
+    {
+      "group": "pair_v2_payload",
+      "label": "M2 LAN nearby SAS",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f76320000000132000000000000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000000000020d443627a257965f1840fdab56eb64052035fa5fee5eda70a9ed24ec2cce64f6c000000204c8277f883601ac342b6ad90e70492450e4c363212c1ba6d08a5a22b7e2c8918",
+      "signature_der_hex": "304502204280e88a684b83c5902eb9950383b189221fea52f05db819b59e66408245befe02210094829c27f77e7fe67c9cdd910311b8037b1ca02bc2c2011ddd0c93fe516ce572",
+      "expect_valid": true
+    },
+    {
+      "group": "pair_v2_payload",
+      "label": "M3 remote QR over pipe (host_desk_id = pipe target)",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f763200000001330000001638744e627a69425635566b42733066383342496976770000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000000000000",
+      "signature_der_hex": "3046022100d155295fd01d9cafd2833b9e4a9d9487e01e6bd8bd897e2c8984ef62014f4ea1022100e895c7f64fd8418b456b01913b47f28c1562a1997383f1291e46a7d58ba85f6b",
+      "expect_valid": true
+    },
+    {
+      "group": "pair_v2_payload",
+      "label": "M4 remote typed code over pipe",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f76320000000134000000063034383231330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d47564151314300000020dd5e1d37944ba7207930852ebfc7205161761f998473b90550f7aa9528125b74000000204b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "signature_der_hex": "304502205a331f8b66307532143c8751153f953ad9db59d6ca6e040c12565faf4f5f2f0b022100959330654aa91bcbe29ce4bab4b9a915f8dd3bdd34d942effd0096ffe8a3af2f",
+      "expect_valid": true
+    },
+    {
+      "group": "attended_v3_payload",
+      "label": "A1 M5 attended v3 over LAN (both Desk IDs empty)",
+      "key": "client",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d30306330346663393634666600000000000000000000002090e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d6416500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "signature_der_hex": "3045022100d2a4b97aa22b9b19cb4784619c409e352848f774af9c50780837cd6c27d2bda40220312e46ade6b05861df3098bb6e4794fdcdb0bc4cc6bff5dd7487230840f07600",
+      "expect_valid": true
+    },
+    {
+      "group": "attended_v3_payload",
+      "label": "A2 M5 attended v3 over pipe",
+      "key": "client",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000c3658514d334a4138475a46340000002090e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d6416500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "signature_der_hex": "3045022059231f6d61beff6d74aeee5f32451fffe6e4560ffc3ea93b2259e8147bf977dd022100d06bc65e538dbcff185881944d78f17a3432cf74a4e2a494733e034f57ad24dc",
+      "expect_valid": true
+    },
+    {
+      "group": "attended_v3_payload",
+      "label": "A3 M5 attended v3 over pipe, fresh n_h",
+      "key": "client",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000c3658514d334a4138475a4634000000200dc0f652f8cc258749a213c7077ef49de3753da63f0ca85a5461e9866688ccd500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "signature_der_hex": "304502200fc61027a668315935aa967987818a027dd1b5544f1ea585e93c13fead880ee4022100f969c3b9d609f3aa727062265e9ce08efdfa478f201bbbe86f700fc73fb6ba6f",
+      "expect_valid": true
+    },
+    {
+      "group": "rendezvous_auth_payload",
+      "label": "first registration (desk_id empty)",
+      "key": "client",
+      "payload_hex": "0000001a5265794465736b2f72656e64657a766f75732f617574682f7631000000209806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04000000237773733a2f2f72656e64657a766f75732e6578616d706c652e746573742f76312f77730000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be300000000",
+      "signature_der_hex": "304402207ec8d734c0a19d81eb278cbff49034fb67e548d13488cd261b92cb2c464896490220490837983305d4a6530823ac16c84922b71c55fbaac751dd212c4cedc31741f4",
+      "expect_valid": true
+    },
+    {
+      "group": "rendezvous_auth_payload",
+      "label": "host with stored Desk ID",
+      "key": "host",
+      "payload_hex": "0000001a5265794465736b2f72656e64657a766f75732f617574682f7631000000209806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04000000237773733a2f2f72656e64657a766f75732e6578616d706c652e746573742f76312f77730000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000000c4a474345584d475641513143",
+      "signature_der_hex": "304402200c45ce0c987c3d29fe0140c47ae775ea378ee7a71bcb914b9f3a523a17823c1102202cd872ae846ce2ec41553d48fcf9f87165d29f07591598bd6c9b3d4ca046f442",
+      "expect_valid": true
+    },
+    {
+      "group": "revoke_self_payload",
+      "label": "revoke",
+      "key": "host",
+      "payload_hex": "0000001c5265794465736b2f72656e64657a766f75732f7265766f6b652f7631000000209806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04",
+      "signature_der_hex": "3046022100a2ff4afd91baa49f20bcd7e213dac12d6913db9812629cd698a674df0d190cd602210092ea6ca308c48f7da7440261de8d6db453ea02acac016f5c19893056b2257f2f",
+      "expect_valid": true
+    },
+    {
+      "group": "negative",
+      "label": "NEG M1 signature checked against the attacker key",
+      "key": "attacker",
+      "payload_hex": "0000000f5265794465736b2f706169722f763200000001310000001638744e627a69425635566b42733066383342496976770000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d303063303466633936346666000000000000000000000000",
+      "signature_der_hex": "3045022100b8ea57be42f3f653f147a8fb0fa461216694e17fd24bda9be6040076c12ef156022042909314ee7dbe13f84f789fcb407b9ac2207d3fb7b9c4ec7a42f9dfc274fd54",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M4 signature with host_desk_id dropped from payload",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f76320000000134000000063034383231330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000000000020dd5e1d37944ba7207930852ebfc7205161761f998473b90550f7aa9528125b74000000204b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "signature_der_hex": "304502205a331f8b66307532143c8751153f953ad9db59d6ca6e040c12565faf4f5f2f0b022100959330654aa91bcbe29ce4bab4b9a915f8dd3bdd34d942effd0096ffe8a3af2f",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M4 signature with wrong domain string",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f76310000000134000000063034383231330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d47564151314300000020dd5e1d37944ba7207930852ebfc7205161761f998473b90550f7aa9528125b74000000204b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "signature_der_hex": "304502205a331f8b66307532143c8751153f953ad9db59d6ca6e040c12565faf4f5f2f0b022100959330654aa91bcbe29ce4bab4b9a915f8dd3bdd34d942effd0096ffe8a3af2f",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M4 signature with method changed to 3",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f76320000000133000000063034383231330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d47564151314300000020dd5e1d37944ba7207930852ebfc7205161761f998473b90550f7aa9528125b74000000204b163cecfac01f00c87adc42bb1409860ee856a9179797976df0701d066f5fe3",
+      "signature_der_hex": "304502205a331f8b66307532143c8751153f953ad9db59d6ca6e040c12565faf4f5f2f0b022100959330654aa91bcbe29ce4bab4b9a915f8dd3bdd34d942effd0096ffe8a3af2f",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG auth signature replayed against another PUBLIC_WS_URL",
+      "key": "host",
+      "payload_hex": "0000001a5265794465736b2f72656e64657a766f75732f617574682f7631000000209806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c040000001e7773733a2f2f6f746865722e6578616d706c652e746573742f76312f77730000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000000c4a474345584d475641513143",
+      "signature_der_hex": "304402200c45ce0c987c3d29fe0140c47ae775ea378ee7a71bcb914b9f3a523a17823c1102202cd872ae846ce2ec41553d48fcf9f87165d29f07591598bd6c9b3d4ca046f442",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG auth signature presented as RevokeSelf (domain separation)",
+      "key": "host",
+      "payload_hex": "0000001c5265794465736b2f72656e64657a766f75732f7265766f6b652f7631000000209806e3bad55f73b56fb1f925dea4635d92c1ac3a2992286c5336d07af8144c04",
+      "signature_der_hex": "304402200c45ce0c987c3d29fe0140c47ae775ea378ee7a71bcb914b9f3a523a17823c1102202cd872ae846ce2ec41553d48fcf9f87165d29f07591598bd6c9b3d4ca046f442",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG truncated DER signature",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f763200000001310000001638744e627a69425635566b42733066383342496976770000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d303063303466633936346666000000000000000000000000",
+      "signature_der_hex": "3045022100b8ea57be42f3f653f147a8fb0fa461216694e17fd24bda9be6040076c12ef156022042909314ee7dbe13f84f789fcb407b9ac2207d3fb7b9c4ec7a42f9dfc274fd",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M5 replay: A2 signature against A3 payload (fresh n_h)",
+      "key": "client",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000c3658514d334a4138475a4634000000200dc0f652f8cc258749a213c7077ef49de3753da63f0ca85a5461e9866688ccd500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "signature_der_hex": "3045022059231f6d61beff6d74aeee5f32451fffe6e4560ffc3ea93b2259e8147bf977dd022100d06bc65e538dbcff185881944d78f17a3432cf74a4e2a494733e034f57ad24dc",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M5 legacy pair/v2 signature against the A2 attended_v3 payload",
+      "key": "client",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000c3658514d334a4138475a46340000002090e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d6416500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "signature_der_hex": "3045022037ac1ce8e6ab6d33034e92f4ddce6e463158061a79480699e60421b5e0f02a84022100f8783cf418ee4fe7cac64979a20672b031d7593c2ec1d0c0750d1da3c5229f8a",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M5 cross-domain: A2 signature against the old pair/v2 M5 pipe payload",
+      "key": "client",
+      "payload_hex": "0000000f5265794465736b2f706169722f76320000000135000000000000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000000000000",
+      "signature_der_hex": "3045022059231f6d61beff6d74aeee5f32451fffe6e4560ffc3ea93b2259e8147bf977dd022100d06bc65e538dbcff185881944d78f17a3432cf74a4e2a494733e034f57ad24dc",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M5 Desk IDs swapped: A2 signature against A2 with host and requester Desk IDs swapped",
+      "key": "client",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c3658514d334a4138475a46340000000c4a474345584d4756415131430000002090e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d6416500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "signature_der_hex": "3045022059231f6d61beff6d74aeee5f32451fffe6e4560ffc3ea93b2259e8147bf977dd022100d06bc65e538dbcff185881944d78f17a3432cf74a4e2a494733e034f57ad24dc",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M5 nonces swapped: A2 signature against A2 with n_h and n_c swapped",
+      "key": "client",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d3030633034666339363466660000000c4a474345584d4756415131430000000c3658514d334a4138475a463400000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f0000002090e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d64165",
+      "signature_der_hex": "3045022059231f6d61beff6d74aeee5f32451fffe6e4560ffc3ea93b2259e8147bf977dd022100d06bc65e538dbcff185881944d78f17a3432cf74a4e2a494733e034f57ad24dc",
+      "expect_valid": false
+    },
+    {
+      "group": "negative",
+      "label": "NEG M5 A1 signature checked against the attacker key",
+      "key": "attacker",
+      "payload_hex": "0000001a5265794465736b2f617474656e6465642f636c69656e742f76330000005b3059301306072a8648ce3d020106082a8648ce3d030107034200047bf4c485064278e65889120a453b22aeb21337a1e460295628303ec164fedc88106a702b78161ffaef31640f634d1466f95c8bdf2660a1e78c83f3911b4512950000005b3059301306072a8648ce3d020106082a8648ce3d03010703420004fb3c1e2bac2fa14fa86b66563fb3c1bce4662f01d5240fc80682bee4a7955d56b7e3736290b0393ff10faa4bca2ffeda1fc7f4d1d806b2efcb8fb951d39d9be30000002436663936313966662d386238362d346431312d623432642d30306330346663393634666600000000000000000000002090e7b2045fa070e8853799750b7e738cdad363dab5d01a3a9af6c4a527d6416500000020a23457289c084cbccc7c9022a2a6c74bcc32b03e61f9f2bbb8d1af0ac822345f",
+      "signature_der_hex": "3045022100d2a4b97aa22b9b19cb4784619c409e352848f774af9c50780837cd6c27d2bda40220312e46ade6b05861df3098bb6e4794fdcdb0bc4cc6bff5dd7487230840f07600",
+      "expect_valid": false
+    }
+  ]
+}

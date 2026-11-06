@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Empty on purpose: no paired-device keys or credentials should ever be included in
+     Android's auto-backup - trust material is device-bound, not cloud-restorable. -->
+<full-backup-content>
+</full-backup-content>

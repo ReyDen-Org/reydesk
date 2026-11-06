@@ -1,0 +1,113 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Android / Gradle (Windows/ has its own .gitignore for .NET build artifacts)
+Android/**/build/
+Android/.gradle/
+Android/.kotlin/
+Android/local.properties
+Android/*.iml
+Android/.idea/
+Android/captures/
+Android/.cxx/
+
+# Backend (once it exists)
+Backend/**/bin/
+Backend/**/obj/
+
+# Protocol/csharp (Windows/ has its own more detailed .gitignore for its own bin/obj)
+Protocol/csharp/**/bin/
+Protocol/csharp/**/obj/
+
+# Protocol codegen output (generated at build time, not checked in)
+**/gen/
+
+# Synced from Protocol/reydesk at build time (see Android/app/build.gradle.kts
+# syncProtoSchema task) - Protocol/reydesk is the only maintained copy.
+Android/app/src/main/proto/
+
+# Local probe output and test build artifacts
+diagnostics/
+Tests/**/bin/
+Tests/**/obj/
+Installer/out/
+Installer/build/
+
+# Android release signing secrets
+Android/keystore.properties
+*.jks
+
+# Release output (scripts/make-release.ps1)
+release/
+
+# ---------------------------------------------------------------------------
+# Public repository exclusions (added 2026-11-06, see docs/PUBLIC_REPO_AUDIT.md)
+# Ignoring a tracked file does not untrack it: the first public commit is made
+# from a fresh index (see the audit), so everything below stays out of it.
+# ---------------------------------------------------------------------------
+
+# Private working notes: AI agent instructions, project memory, run state
+memory/
+AGENTS.md
+CLAUDE.md
+.runstate/
+.claude/
+
+# Stray or personal files in the project root
+/ChatGPT Image*.png
+/*.png
+
+# Signing material and secrets of any kind
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+keystore.properties
+.env
+.env.*
+!.env.example
+**/secrets/
+
+# Logs, captures and local output anywhere in the tree
+*.log
+logs/
+*.binlog
+*.lnk
+*.xbf
+Installer/art/*.tmp
+
+# Backend deployment files tied to the production host (origin IP, runtime paths).
+# Publish a sanitized example instead if needed.
+Backend/rendezvous/compose.production.yaml
+Backend/rendezvous/nginx-rdv.conf
+Backend/rendezvous/.env
+# The Go server's generated protobuf code is needed by its Dockerfile (no protoc step),
+# so it is kept in the repo despite the **/gen/ rule above.
+!Backend/rendezvous/gen/
+
+# docs/: allowlist. Internal validation reports, incident notes, security
+# reviews, competitor research and screenshots stay private by default.
+docs/*
+!docs/BUILD.md
+!docs/architecture.md
+!docs/protocol.md
+!docs/identity-and-pairing.md
+!docs/REYDESK_USAGE.md
+!docs/design-system.md
+!docs/assets/
+docs/assets/*
+!docs/assets/reydesk-mark.svg
+!docs/assets/reydesk-mark.png
+!docs/assets/export-mark.ps1
+
+# Private archive and cleanup report
+.private-archive/
+docs/.cleanup-report.md
+
+# License texts copied into the Android build (sources are LICENSE and THIRD_PARTY_NOTICES.md)
+Android/app/src/main/assets/licenses/ReyDesk-MIT.txt
+Android/app/src/main/assets/licenses/THIRD_PARTY_NOTICES.md

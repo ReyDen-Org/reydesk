@@ -1,0 +1,54 @@
+[versions]
+agp = "9.3.2"
+kotlin = "2.3.20"
+coreKtx = "1.15.0"
+lifecycleRuntimeKtx = "2.9.0"
+activityCompose = "1.10.0"
+composeBom = "2026.08.00"
+navigationCompose = "2.9.0"
+protobufKotlinLite = "4.29.1"
+protobufPlugin = "0.10.0"
+# Bumped 2026-08-30: 1.6.1 (2023-era) doesn't align with the Compose BOM's forced
+# androidx.lifecycle 2.9.x - Gradle couldn't resolve some of 1.6.1's own legacy
+# transitive deps (lifecycle-livedata, emoji2-views-helper) at that forced version.
+# 1.8.0 is current stable as of this session.
+appcompat = "1.8.0"
+datastorePreferences = "1.0.0"
+zxingEmbedded = "4.3.0"
+webrtcSdk = "144.7559.14"
+# okhttp: WebSocket client for the rendezvous (signaling) service. Owner approved 2026-11-05.
+okhttp = "4.12.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+protobuf-kotlin-lite = { group = "com.google.protobuf", name = "protobuf-kotlin-lite", version.ref = "protobufKotlinLite" }
+# appcompat: needed for AppCompatDelegate per-app language switching (real Language
+# setting, works down to minSdk without needing Android 13's LocaleManager directly).
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+# datastore-preferences: persisted Theme/Language settings, the standard modern
+# replacement for SharedPreferences.
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+# zxing-android-embedded: QR pairing scan (spec §8) - a prebuilt scanning Activity
+# over the well-established ZXing decoder, no Google Play Services dependency
+# (keeps local-mode scanning fully offline-capable).
+zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingEmbedded" }
+# io.github.webrtc-sdk: actively-maintained Maven mirror of Google's org.webrtc AAR
+# (Google stopped publishing prebuilt AARs directly).
+webrtc = { group = "io.github.webrtc-sdk", name = "android", version.ref = "webrtcSdk" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+
+[plugins]
+# No "android-application" entry: applied via root build.gradle.kts's buildscript
+# classpath instead of the plugins{} DSL.
+# No "kotlin-android" (org.jetbrains.kotlin.android) entry: AGP 9+ has built-in
+# Kotlin support and conflicts with that plugin.
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }

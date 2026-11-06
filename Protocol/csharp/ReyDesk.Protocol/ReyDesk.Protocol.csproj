@@ -1,0 +1,29 @@
+<!--
+  Separate class library for the generated C# protocol types, rather than running
+  Grpc.Tools' protobuf codegen directly inside Windows/ReyDesk.Windows.csproj.
+  Combining WinUI3's XAML markup compiler with Grpc.Tools codegen in one project
+  breaks the XAML compiler's "LocalAssembly" type resolution pass (WMC1509/WMC9999
+  errors). This also makes the generated types reusable by
+  the future Backend project (docs/architecture.md), which was the plan anyway.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.36.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.83.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="..\..\reydesk\v1\*.proto" ProtoRoot="..\.." GrpcServices="None" />
+  </ItemGroup>
+
+</Project>

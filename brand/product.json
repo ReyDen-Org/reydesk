@@ -1,0 +1,172 @@
+{
+  "product": "ReyDesk",
+  "platform": "native-windows+android",
+  "accent": {
+    "base": "#FFB020",
+    "hover": "#FFC04D",
+    "pressed": "#E69A10",
+    "text": "#FFB020",
+    "ink": "#080B11",
+    "onAccent": "#080B11",
+    "warning": "#FF8A3D"
+  },
+  "tileGradient": [
+    "#FFC04D",
+    "#E69A10"
+  ],
+  "masters": {
+    "reyden-r-master.png": "0d664729a128ded9d6c19978d6d1afc79de21f41dd149bc67fb1207cd9277688",
+    "reyden-wordmark-chrome-master.png": "1e06b5573c768fd2c4c5958a9f2372e6b1bf0e15d00bb8935f81832272f32170"
+  },
+  "source": "ReyDen/family/tools/{make_kit,wordmark_master,cc}.mjs; masters copied unchanged from ReyConnect",
+  "generation": "node scripts/generate-brand.mjs",
+  "contrast": {
+    "accentTextOnBg": 10.77,
+    "accentTextOnPanel": 9.55,
+    "accentTextOnSurface": 10.18,
+    "inkOnFill": 10.77,
+    "inkOnFillHover": 12.1,
+    "inkOnFillPressed": 8.44,
+    "fillVsBg": 10.77,
+    "warningOnBg": 8.4,
+    "warningOnPanel": 7.44,
+    "successOnBg": 11.04,
+    "dangerOnBg": 6.45,
+    "dangerOnPanel": 5.72
+  },
+  "statusDeltaE": {
+    "accentVsDanger": {
+      "cie76": 64.4,
+      "de2000": 38.2
+    },
+    "accentVsWarning": {
+      "cie76": 27.9,
+      "de2000": 16.7
+    },
+    "accentVsSuccess": {
+      "cie76": 90.2,
+      "de2000": 43.5
+    },
+    "warningVsDanger": {
+      "cie76": 36.7,
+      "de2000": 21.6
+    }
+  },
+  "deltaE": [
+    {
+      "id": "reyden",
+      "text": "#4C9AFF",
+      "base": "#2F6FEB",
+      "textVsText": {
+        "cie76": 134.2,
+        "de2000": 56.6
+      },
+      "textVsFill": {
+        "cie76": 146.9,
+        "de2000": 63.7
+      },
+      "fillVsText": {
+        "cie76": 134.2,
+        "de2000": 56.6
+      },
+      "fillVsFill": {
+        "cie76": 146.9,
+        "de2000": 63.7
+      }
+    },
+    {
+      "id": "reytv",
+      "text": "#FF5C6C",
+      "base": "#D7263D",
+      "textVsText": {
+        "cie76": 69.1,
+        "de2000": 40.7
+      },
+      "textVsFill": {
+        "cie76": 71,
+        "de2000": 45
+      },
+      "fillVsText": {
+        "cie76": 69.1,
+        "de2000": 40.7
+      },
+      "fillVsFill": {
+        "cie76": 71,
+        "de2000": 45
+      }
+    },
+    {
+      "id": "reylink",
+      "text": "#3DDC84",
+      "base": "#3DDC84",
+      "textVsText": {
+        "cie76": 90.2,
+        "de2000": 43.5
+      },
+      "textVsFill": {
+        "cie76": 90.2,
+        "de2000": 43.5
+      },
+      "fillVsText": {
+        "cie76": 90.2,
+        "de2000": 43.5
+      },
+      "fillVsFill": {
+        "cie76": 90.2,
+        "de2000": 43.5
+      }
+    },
+    {
+      "id": "reyupload",
+      "text": "#B084FF",
+      "base": "#7C4DFF",
+      "textVsText": {
+        "cie76": 134,
+        "de2000": 60.7
+      },
+      "textVsFill": {
+        "cie76": 165.6,
+        "de2000": 69.3
+      },
+      "fillVsText": {
+        "cie76": 134,
+        "de2000": 60.7
+      },
+      "fillVsFill": {
+        "cie76": 165.6,
+        "de2000": 69.3
+      }
+    },
+    {
+      "id": "reyconnect",
+      "text": "#FFB454",
+      "base": "#B85C00",
+      "textVsText": {
+        "cie76": 17.6,
+        "de2000": 5
+      },
+      "textVsFill": {
+        "cie76": 36.2,
+        "de2000": 26.7
+      },
+      "fillVsText": {
+        "cie76": 17.6,
+        "de2000": 5
+      },
+      "fillVsFill": {
+        "cie76": 36.2,
+        "de2000": 26.7
+      }
+    }
+  ],
+  "icoSizes": [
+    16,
+    24,
+    32,
+    48,
+    64,
+    128,
+    256
+  ],
+  "generatedAt": "2026-11-05T13:51:45.998Z"
+}

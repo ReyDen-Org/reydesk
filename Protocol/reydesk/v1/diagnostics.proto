@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+import "reydesk/v1/common.proto";
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+enum ConnectionState {
+  CONNECTION_STATE_UNSPECIFIED = 0;
+  CONNECTION_STATE_DISCOVERING = 1;
+  CONNECTION_STATE_PAIRING = 2;
+  CONNECTION_STATE_CONNECTING = 3;
+  CONNECTION_STATE_CONNECTED = 4;
+  CONNECTION_STATE_RECONNECTING = 5;
+  CONNECTION_STATE_DISCONNECTED = 6;
+  CONNECTION_STATE_FAILED = 7;
+}
+
+message ConnectionStatus {
+  ConnectionState state = 1;
+  ConnectionMedium medium = 2;
+  string diagnostic_detail = 3; // technical message, paired with a separate user-facing string client-side
+  PathKind path = 4;
+}
+
+enum PathKind {
+  PATH_UNSPECIFIED = 0;
+  PATH_LAN_DIRECT = 1;
+  PATH_REMOTE_DIRECT = 2;
+  PATH_RELAYED = 3;
+}
+
+// Sent periodically (e.g. 1 Hz) while streaming so both ends can render
+// the diagnostics overlay from spec §10 and drive adaptive bitrate.
+message StreamStats {
+  float fps = 1;
+  uint32 bitrate_kbps = 2;
+  uint32 round_trip_time_ms = 3;
+  uint32 packets_lost = 4;
+  uint32 frames_dropped = 5;
+  uint32 width_px = 6;
+  uint32 height_px = 7;
+  VideoCodecInUse codec_in_use = 8;
+  // Presence flags distinguish unavailable measurements from measured zero.
+  bool round_trip_time_available = 9;
+  bool bitrate_available = 10;
+  bool fps_available = 11;
+  float packet_loss_percent = 12;
+  bool packet_loss_available = 13;
+  float jitter_ms = 14;
+  bool jitter_available = 15;
+}
+
+enum VideoCodecInUse {
+  VIDEO_CODEC_IN_USE_UNSPECIFIED = 0;
+  VIDEO_CODEC_IN_USE_H264 = 1;
+  VIDEO_CODEC_IN_USE_HEVC = 2;
+}

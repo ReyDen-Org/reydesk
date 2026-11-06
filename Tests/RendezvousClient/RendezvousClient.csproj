@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Windows/ReyDesk.Windows/Identity/IdentityCodec.cs" Link="IdentityCodec.cs" />
+    <Compile Include="../../Windows/ReyDesk.Windows/Rendezvous/*.cs" LinkBase="Rendezvous" />
+    <ProjectReference Include="../../Protocol/csharp/ReyDesk.Protocol/ReyDesk.Protocol.csproj" />
+  </ItemGroup>
+</Project>

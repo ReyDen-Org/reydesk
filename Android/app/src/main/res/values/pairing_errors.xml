@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pairing failure reasons shown on the phone (ui/connection/PairingFailureText.kt). -->
+<resources>
+    <string name="pair_err_wrong_code">Wrong code. Check the 6-digit code on the PC and try again.</string>
+    <string name="pair_err_pc_unavailable">The PC is not available: it is offline, its internet access is off, or it has no active code.</string>
+    <string name="pair_err_no_answer">The PC did not respond in time. Check that ReyDesk is open on the PC.</string>
+    <string name="pair_err_rate_limited">Too many attempts. Wait a minute and try again.</string>
+    <string name="pair_err_declined">The connection was declined on the PC.</string>
+    <string name="pair_err_code_expired">The code has expired. Create a new one on the PC.</string>
+    <string name="pair_err_not_confirmed">The codes were not confirmed as the same.</string>
+    <string name="pair_err_paused">Code comparison is paused after failed attempts. Try again in a few minutes.</string>
+    <string name="pair_err_phone_offline">This phone is not connected to the ReyDesk server. Turn on internet access in Settings.</string>
+    <string name="pair_err_lan_unreachable">Cannot reach the PC on this network. Turn on internet access on both devices to connect from anywhere.</string>
+    <string name="pair_err_offer_expired">This QR code or pairing code has expired or was already used. Create a new one on the PC.</string>
+    <string name="pair_err_qr_used">This QR code was already used. Click Generate new code on the PC and scan the new code.</string>
+</resources>

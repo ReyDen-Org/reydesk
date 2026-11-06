@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+// High-frequency messages carried over the WebRTC unordered/unreliable
+// data channel where safe to drop (pointer move) and the ordered/reliable
+// one where not (key up/down, clicks) — see docs/protocol.md "Data channel
+// lanes". Coordinates are normalized [0,1] against the negotiated stream
+// resolution, not raw pixels, so sender/receiver never need to agree on a
+// pixel space out of band.
+
+enum MouseButton {
+  MOUSE_BUTTON_UNSPECIFIED = 0;
+  MOUSE_BUTTON_LEFT = 1;
+  MOUSE_BUTTON_RIGHT = 2;
+  MOUSE_BUTTON_MIDDLE = 3;
+}
+
+message MouseMove {
+  float x = 1;
+  float y = 2;
+  string display_id = 3;
+}
+
+message MouseButtonEvent {
+  MouseButton button = 1;
+  bool is_down = 2;
+  float x = 3;
+  float y = 4;
+  string display_id = 5;
+}
+
+message MouseScroll {
+  float delta_x = 1;
+  float delta_y = 2;
+}
+
+// Key events use platform-neutral USB HID usage codes (not Windows VK_*
+// or Android KeyEvent codes) so the same wire format works for any future
+// client platform; each client translates to/from its native key enum.
+message KeyEvent {
+  uint32 hid_usage_code = 1;
+  bool is_down = 2;
+  bool ctrl = 3;
+  bool alt = 4;
+  bool shift = 5;
+  bool meta = 6; // Windows/Cmd key
+}
+
+message TextInput {
+  string text = 1; // committed IME text, for cases raw key events don't cover
+}
+
+enum GamepadButton {
+  GAMEPAD_BUTTON_UNSPECIFIED = 0;
+  GAMEPAD_BUTTON_A = 1;
+  GAMEPAD_BUTTON_B = 2;
+  GAMEPAD_BUTTON_X = 3;
+  GAMEPAD_BUTTON_Y = 4;
+  GAMEPAD_BUTTON_DPAD_UP = 5;
+  GAMEPAD_BUTTON_DPAD_DOWN = 6;
+  GAMEPAD_BUTTON_DPAD_LEFT = 7;
+  GAMEPAD_BUTTON_DPAD_RIGHT = 8;
+  GAMEPAD_BUTTON_LEFT_BUMPER = 9;
+  GAMEPAD_BUTTON_RIGHT_BUMPER = 10;
+  GAMEPAD_BUTTON_LEFT_STICK = 11;
+  GAMEPAD_BUTTON_RIGHT_STICK = 12;
+  GAMEPAD_BUTTON_START = 13;
+  GAMEPAD_BUTTON_SELECT = 14;
+}
+
+message GamepadButtonEvent {
+  uint32 gamepad_index = 1;
+  GamepadButton button = 2;
+  bool is_down = 3;
+}
+
+message GamepadAxisEvent {
+  uint32 gamepad_index = 1;
+  float left_stick_x = 2;
+  float left_stick_y = 3;
+  float right_stick_x = 4;
+  float right_stick_y = 5;
+  float left_trigger = 6;
+  float right_trigger = 7;
+}

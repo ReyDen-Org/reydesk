@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page x:Class="ReyDesk.Windows.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:rd="using:ReyDesk.Windows.Controls"
+    HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SizeChanged="MainPage_SizeChanged"
+    Loaded="MainPage_Loaded" Background="{StaticResource RDBgBrush}">
+    <Page.Resources>
+        <!-- D2 Controls.xaml styles reference {ThemeResource Transparent}, which no dictionary defines (reported to coordinator). Page-level fallback so the app starts. -->
+        <SolidColorBrush x:Key="Transparent" Color="Transparent"/>
+        <!-- Chromeless nav button: the inner surface Grid paints rest, hover and selected (MainPage.xaml.cs SetNavState sets Background). -->
+        <Style x:Key="RDNavButton" TargetType="Button">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="8,2"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="UseSystemFocusVisuals" Value="True"/>
+            <Setter Property="FocusVisualMargin" Value="-2"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <ContentPresenter x:Name="Presenter" Content="{TemplateBinding Content}" CornerRadius="{TemplateBinding CornerRadius}"
+                                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" RenderTransformOrigin="0.5,0.5"
+                                          AutomationProperties.AccessibilityView="Raw">
+                            <ContentPresenter.RenderTransform><ScaleTransform x:Name="Scale"/></ContentPresenter.RenderTransform>
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal"/>
+                                    <VisualState x:Name="PointerOver"/>
+                                    <VisualState x:Name="Pressed">
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.98" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.98" Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled"/>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                        </ContentPresenter>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="RDIdRun" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource RDFontMono}"/>
+            <Setter Property="FontSize" Value="{StaticResource RDTypeId}"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{StaticResource RDTextBrush}"/>
+        </Style>
+    </Page.Resources>
+    <Grid x:Name="ShellGrid">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="216"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+        <Border x:Name="Sidebar" Background="{StaticResource RDSidebarBrush}" BorderBrush="{StaticResource RDLineBrush}" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="64"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="18,0,12,0" VerticalAlignment="Center" AutomationProperties.Name="ReyDesk">
+                    <Image Source="Assets/Square44x44Logo.scale-200.png" Width="28" Height="28" AutomationProperties.AccessibilityView="Raw"/>
+                    <TextBlock FontSize="{StaticResource RDTypeBrand}" FontWeight="Bold" VerticalAlignment="Center"><Run Text="Rey" Foreground="{StaticResource RDTextBrush}"/><Run Text="Desk" Foreground="{StaticResource RDAccentBrush}"/></TextBlock>
+                </StackPanel>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="0" Padding="0,4,0,0">
+                        <Button x:Name="ConnectionItem" Style="{StaticResource RDNavButton}" Click="ConnectionItem_Click" PointerEntered="Nav_PointerEntered" PointerExited="Nav_PointerExited">
+                            <Grid x:Name="ConnectionNavSurface" Background="{StaticResource RDSidebarBrush}" CornerRadius="12" Height="44" ColumnSpacing="12" Padding="12,0,12,0">
+                                <Grid.BackgroundTransition><BrushTransition Duration="0:0:0.12"/></Grid.BackgroundTransition>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <Rectangle x:Name="ConnectionNavRail" Grid.ColumnSpan="2" Width="3" Height="20" RadiusX="2" RadiusY="2" Fill="{StaticResource RDAccentBrush}" HorizontalAlignment="Left" Margin="-12,0,0,0" VerticalAlignment="Center"/>
+                                <rd:RDIcon x:Name="ConnectionNavIcon" Glyph="Connection" Size="20" VerticalAlignment="Center" Foreground="{StaticResource RDTextMutedBrush}"/>
+                                <TextBlock x:Name="ConnectionNavLabel" Grid.Column="1" VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="{StaticResource RDTextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </Button>
+                        <Button x:Name="DevicesItem" Style="{StaticResource RDNavButton}" Click="DevicesItem_Click" PointerEntered="Nav_PointerEntered" PointerExited="Nav_PointerExited">
+                            <Grid x:Name="DevicesNavSurface" Background="{StaticResource RDSidebarBrush}" CornerRadius="12" Height="44" ColumnSpacing="12" Padding="12,0,12,0">
+                                <Grid.BackgroundTransition><BrushTransition Duration="0:0:0.12"/></Grid.BackgroundTransition>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <Rectangle x:Name="DevicesNavRail" Grid.ColumnSpan="2" Width="3" Height="20" RadiusX="2" RadiusY="2" Fill="{StaticResource RDAccentBrush}" HorizontalAlignment="Left" Margin="-12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                <rd:RDIcon x:Name="DevicesNavIcon" Glyph="Devices" Size="20" VerticalAlignment="Center" Foreground="{StaticResource RDTextMutedBrush}"/>
+                                <TextBlock x:Name="DevicesNavLabel" Grid.Column="1" VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="{StaticResource RDTextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </Button>
+                        <Button x:Name="PhoneHubItem" Style="{StaticResource RDNavButton}" Click="PhoneHubItem_Click" PointerEntered="Nav_PointerEntered" PointerExited="Nav_PointerExited">
+                            <Grid x:Name="PhoneHubNavSurface" Background="{StaticResource RDSidebarBrush}" CornerRadius="12" Height="44" ColumnSpacing="12" Padding="12,0,12,0">
+                                <Grid.BackgroundTransition><BrushTransition Duration="0:0:0.12"/></Grid.BackgroundTransition>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <Rectangle x:Name="PhoneHubNavRail" Grid.ColumnSpan="2" Width="3" Height="20" RadiusX="2" RadiusY="2" Fill="{StaticResource RDAccentBrush}" HorizontalAlignment="Left" Margin="-12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                <rd:RDIcon x:Name="PhoneHubNavIcon" Glyph="PhoneHub" Size="20" VerticalAlignment="Center" Foreground="{StaticResource RDTextMutedBrush}"/>
+                                <TextBlock x:Name="PhoneHubNavLabel" Grid.Column="1" VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="{StaticResource RDTextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </Button>
+                        <Button x:Name="TransfersItem" Style="{StaticResource RDNavButton}" Click="TransfersItem_Click" PointerEntered="Nav_PointerEntered" PointerExited="Nav_PointerExited">
+                            <Grid x:Name="TransfersNavSurface" Background="{StaticResource RDSidebarBrush}" CornerRadius="12" Height="44" ColumnSpacing="12" Padding="12,0,12,0">
+                                <Grid.BackgroundTransition><BrushTransition Duration="0:0:0.12"/></Grid.BackgroundTransition>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <Rectangle x:Name="TransfersNavRail" Grid.ColumnSpan="2" Width="3" Height="20" RadiusX="2" RadiusY="2" Fill="{StaticResource RDAccentBrush}" HorizontalAlignment="Left" Margin="-12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                <rd:RDIcon x:Name="TransfersNavIcon" Glyph="Transfers" Size="20" VerticalAlignment="Center" Foreground="{StaticResource RDTextMutedBrush}"/>
+                                <TextBlock x:Name="TransfersNavLabel" Grid.Column="1" VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="{StaticResource RDTextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </Button>
+                        <Button x:Name="SettingsItem" Style="{StaticResource RDNavButton}" Click="SettingsItem_Click" PointerEntered="Nav_PointerEntered" PointerExited="Nav_PointerExited">
+                            <Grid x:Name="SettingsNavSurface" Background="{StaticResource RDSidebarBrush}" CornerRadius="12" Height="44" ColumnSpacing="12" Padding="12,0,12,0">
+                                <Grid.BackgroundTransition><BrushTransition Duration="0:0:0.12"/></Grid.BackgroundTransition>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <Rectangle x:Name="SettingsNavRail" Grid.ColumnSpan="2" Width="3" Height="20" RadiusX="2" RadiusY="2" Fill="{StaticResource RDAccentBrush}" HorizontalAlignment="Left" Margin="-12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                <rd:RDIcon x:Name="SettingsNavIcon" Glyph="Settings" Size="20" VerticalAlignment="Center" Foreground="{StaticResource RDTextMutedBrush}"/>
+                                <TextBlock x:Name="SettingsNavLabel" Grid.Column="1" VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="{StaticResource RDTextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </Button>
+                        <Button x:Name="TutorialItem" Style="{StaticResource RDNavButton}" Margin="0,8,0,0" Click="TutorialItem_Click" PointerEntered="Nav_PointerEntered" PointerExited="Nav_PointerExited">
+                            <Grid x:Name="TutorialNavSurface" Background="{StaticResource RDSidebarBrush}" CornerRadius="12" Height="44" ColumnSpacing="12" Padding="12,0,12,0">
+                                <Grid.BackgroundTransition><BrushTransition Duration="0:0:0.12"/></Grid.BackgroundTransition>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <Rectangle x:Name="TutorialNavRail" Grid.ColumnSpan="2" Width="3" Height="20" RadiusX="2" RadiusY="2" Fill="{StaticResource RDAccentBrush}" HorizontalAlignment="Left" Margin="-12,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                <rd:RDIcon x:Name="TutorialNavIcon" Glyph="Help" Size="20" VerticalAlignment="Center" Foreground="{StaticResource RDTextMutedBrush}"/>
+                                <TextBlock x:Name="TutorialNavLabel" Grid.Column="1" VerticalAlignment="Center" FontSize="14" FontWeight="Medium" Foreground="{StaticResource RDTextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+                <!-- Remote status pill (2.1): dot 8 + text 12 -->
+                <Border x:Name="SidebarRemotePill" Grid.Row="2" Margin="16,0,16,12" Height="28" Padding="12,0" CornerRadius="14" HorizontalAlignment="Left"
+                        Background="{StaticResource RDPanelBrush}" BorderBrush="{StaticResource RDLineBrush}" BorderThickness="1">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Ellipse x:Name="SidebarRemoteDot" Width="8" Height="8" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="SidebarRemoteText" FontSize="12" VerticalAlignment="Center" Foreground="{StaticResource RDTextMutedBrush}"/>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="3" BorderBrush="{StaticResource RDLineBrush}" BorderThickness="0,1,0,0" Margin="16,0,16,0" Padding="0,12,0,14">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Left"><TextBlock x:Name="SidebarVersionLabel" FontSize="{StaticResource RDTypeCaption}" Foreground="{StaticResource RDTextFaintBrush}"/><TextBlock x:Name="SidebarVersion" FontFamily="{StaticResource RDFontMono}" FontSize="{StaticResource RDTypeCaption}" Foreground="{StaticResource RDTextFaintBrush}" FlowDirection="LeftToRight"/></StackPanel>
+                        <TextBlock x:Name="SidebarBuild" FontFamily="{StaticResource RDFontMono}" FontSize="{StaticResource RDTypeCaption}" Foreground="{StaticResource RDTextFaintBrush}" FlowDirection="LeftToRight" HorizontalAlignment="Left" TextWrapping="Wrap"/>
+                        <HyperlinkButton x:Name="SidebarCopyright" NavigateUri="https://reyden.ir" Padding="0,4,0,0" HorizontalAlignment="Left" HorizontalContentAlignment="Left">
+                            <TextBlock x:Name="SidebarCopyrightText" FontSize="12" Foreground="{StaticResource RDTextMutedBrush}" TextWrapping="Wrap"/>
+                        </HyperlinkButton>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+        <Grid x:Name="ContentHost" Grid.Column="1" RowSpacing="0" HorizontalAlignment="Left">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Button x:Name="CompactMenuButton" Style="{StaticResource RDIconButton}" Visibility="Collapsed" HorizontalAlignment="Left" Margin="12,6,0,0">
+                <rd:RDIcon Glyph="Menu" Size="18"/>
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem x:Name="CompactConnectionItem" Click="ConnectionItem_Click"/>
+                        <MenuFlyoutItem x:Name="CompactDevicesItem" Click="DevicesItem_Click"/>
+                        <MenuFlyoutItem x:Name="CompactPhoneHubItem" Click="PhoneHubItem_Click"/>
+                        <MenuFlyoutItem x:Name="CompactTransfersItem" Click="TransfersItem_Click"/>
+                        <MenuFlyoutItem x:Name="CompactSettingsItem" Click="SettingsItem_Click"/>
+                        <MenuFlyoutItem x:Name="CompactTutorialItem" Click="TutorialItem_Click"/>
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+            <Grid Grid.Row="1" x:Name="Workspace" Padding="28,20,28,20" SizeChanged="Workspace_SizeChanged">
+                <ScrollViewer x:Name="ConnectionPanel" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" HorizontalContentAlignment="Left">
+                    <StackPanel x:Name="ConnectionContent" Spacing="20" MaxWidth="1000" HorizontalAlignment="Left" SizeChanged="ConnectionContent_SizeChanged">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel Spacing="6">
+                                <TextBlock x:Name="ConnectionTitle" Style="{StaticResource RDTextTitle}" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="ConnectionSubtitle" FontSize="{StaticResource RDTypeSub}" Foreground="{StaticResource RDTextMutedBrush}" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left"/>
+                            </StackPanel>
+                            <Button x:Name="ConnectionHelpButton" Grid.Column="1" Style="{StaticResource RDGhostButton}" VerticalAlignment="Top" Click="ConnectionHelp_Click"/>
+                        </Grid>
+                        <Border x:Name="FirstRunCard" Style="{StaticResource RDCard}" Padding="16,14" Visibility="Collapsed" BorderBrush="{StaticResource RDAccentTintLineBrush}"/>
+
+                        <!-- Idle view. Column widths and the stacked reflow are driven by UpdatePairingLayout in MainPage.xaml.cs, which
+                             calls the reading-start container QrPanel and the second container DetailsPanel (legacy names, kept so it compiles):
+                             QrPanel = ring + Device ID card + add-phone button, DetailsPanel = QR card + nearby hint. -->
+                        <Grid x:Name="PairingLayout" ColumnSpacing="16" RowSpacing="16">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="1*"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <StackPanel x:Name="QrPanel" Grid.Row="0" Grid.Column="0" Spacing="14">
+                                <rd:RDStatusRing x:Name="HeroRing" HorizontalAlignment="Center"/>
+                                <Border x:Name="DeskIdCard" Style="{StaticResource RDCard}">
+                                    <StackPanel Spacing="12">
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Width="34" Height="34" CornerRadius="{StaticResource RDRadiusTile}" Background="{StaticResource RDIconTileBrush}" BorderBrush="{StaticResource RDIconTileLineBrush}" BorderThickness="1" VerticalAlignment="Center">
+                                                <rd:RDIcon Glyph="Id" Size="18" Foreground="{StaticResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                                <TextBlock x:Name="DeskIdLabel" Style="{StaticResource RDTextLabel}"/>
+                                                <TextBlock x:Name="ComputerNameText" FontSize="{StaticResource RDTypeLabel}" Foreground="{StaticResource RDTextFaintBrush}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid x:Name="DeskIdRow" MinHeight="40" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <StackPanel x:Name="DeskIdRuns" Orientation="Horizontal" Spacing="0" FlowDirection="LeftToRight" HorizontalAlignment="Left" VerticalAlignment="Center" Visibility="Collapsed">
+                                                <TextBlock x:Name="DeskIdRun0" Style="{StaticResource RDIdRun}"/>
+                                                <TextBlock x:Name="DeskIdRun1" Style="{StaticResource RDIdRun}"/>
+                                                <TextBlock x:Name="DeskIdRun2" Style="{StaticResource RDIdRun}"/>
+                                            </StackPanel>
+                                            <TextBlock x:Name="DeskIdEmptyText" Style="{StaticResource RDTextMuted}" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                            <StackPanel x:Name="DeskIdSkeleton" Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Left" Visibility="Collapsed">
+                                                <rd:RDSkeleton Width="200" Height="26"/>
+                                                <TextBlock x:Name="DeskIdGettingText" Style="{StaticResource RDTextMuted}"/>
+                                            </StackPanel>
+                                            <Button x:Name="CopyIdButton" Grid.Column="1" Style="{StaticResource RDTonalButton}" CornerRadius="18" MinHeight="36" Padding="14,0" VerticalAlignment="Center" Click="CopyIdButton_Click" Visibility="Collapsed">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <rd:RDIcon x:Name="CopyIdIcon" Glyph="Copy" Size="16"/>
+                                                    <TextBlock x:Name="CopyIdLabel" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                        <TextBlock x:Name="KeyIdText" Style="{StaticResource RDTextMono}" FlowDirection="LeftToRight" HorizontalAlignment="Left" IsTextSelectionEnabled="True" Visibility="Collapsed"/>
+                                        <Button x:Name="RetryIdButton" Style="{StaticResource RDGhostButton}" HorizontalAlignment="Left" Click="RetryIdButton_Click" Visibility="Collapsed"/>
+                                        <Rectangle Height="1" Fill="{StaticResource RDLineBrush}"/>
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <StackPanel VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock x:Name="InternetLabel" FontSize="{StaticResource RDTypeBody}" FontWeight="Medium" Foreground="{StaticResource RDTextBrush}"/>
+                                                <TextBlock x:Name="InternetStateText" Style="{StaticResource RDTextHelper}"/>
+                                            </StackPanel>
+                                            <rd:RDPathBadge x:Name="DeskPathBadge" Grid.Column="1" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                            <ToggleSwitch x:Name="RemoteToggle" Grid.Column="2" OnContent="" OffContent="" MinWidth="0" VerticalAlignment="Center" Toggled="RemoteToggle_Toggled"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Button x:Name="AddPhoneButton" Style="{StaticResource RDSecondaryButton}" HorizontalAlignment="Stretch" Click="AddPhoneButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <rd:RDIcon Glyph="Globe" Size="18"/>
+                                        <TextBlock x:Name="AddPhoneLabel" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Border x:Name="RemoteCodePanel" Style="{StaticResource RDCard}" Visibility="Collapsed">
+                                    <StackPanel Spacing="12">
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <Border Width="28" Height="28" CornerRadius="{StaticResource RDRadiusTileSm}" Background="{StaticResource RDIconTileBrush}" BorderBrush="{StaticResource RDIconTileLineBrush}" BorderThickness="1" VerticalAlignment="Center">
+                                                <rd:RDIcon Glyph="Code" Size="16" Foreground="{StaticResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock x:Name="CodeTitleText" Grid.Column="1" Style="{StaticResource RDTextSection}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <TextBlock x:Name="CodeNoteText" Style="{StaticResource RDTextMuted}" Visibility="Collapsed"/>
+                                        <rd:RDSkeleton x:Name="CodeSkeleton" Height="64" Radius="16" Visibility="Collapsed"/>
+                                        <Border x:Name="CodeTile" CornerRadius="{StaticResource RDRadiusCard}" Background="{StaticResource RDIconTileBrush}" BorderBrush="{StaticResource RDIconTileLineBrush}" BorderThickness="1" Padding="20,12" Visibility="Collapsed">
+                                            <TextBlock x:Name="CodeText" FontFamily="{StaticResource RDFontMono}" FontSize="{StaticResource RDTypeSas}" FontWeight="Bold" Foreground="{StaticResource RDTextBrush}" FlowDirection="LeftToRight" HorizontalAlignment="Center" IsTextSelectionEnabled="True"/>
+                                        </Border>
+                                        <TextBlock x:Name="CodeExpiryText" Style="{StaticResource RDTextMuted}" Visibility="Collapsed"/>
+                                        <TextBlock x:Name="CodeDeskIdText" Style="{StaticResource RDTextMono}" FlowDirection="LeftToRight" HorizontalAlignment="Left" Visibility="Collapsed"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button x:Name="CodeCancelButton" Style="{StaticResource RDGhostButton}" Click="CodeCancelButton_Click"/>
+                                            <Button x:Name="CodeRegenerateButton" Style="{StaticResource RDSecondaryButton}" Click="CodeRegenerateButton_Click"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                            <StackPanel x:Name="DetailsPanel" Grid.Row="0" Grid.Column="1" Spacing="12">
+                                <Border x:Name="QrCard" Style="{StaticResource RDCard}" Padding="20">
+                                    <StackPanel Spacing="18">
+                                        <Border Background="White" Padding="16" CornerRadius="12" HorizontalAlignment="Center">
+                                            <Viewbox MaxWidth="224" MaxHeight="224" Stretch="Uniform">
+                                                <Image x:Name="QrCodeImage" Width="224" Height="224" AutomationProperties.Name="QR"/>
+                                            </Viewbox>
+                                        </Border>
+                                        <StackPanel Spacing="10">
+                                            <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Border Width="24" Height="24" CornerRadius="12" Background="{StaticResource RDAccentTintBrush}" VerticalAlignment="Top"><TextBlock x:Name="StepNum1" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                <TextBlock x:Name="StepText1" Grid.Column="1" Style="{StaticResource RDTextMuted}" VerticalAlignment="Center"/></Grid>
+                                            <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Border Width="24" Height="24" CornerRadius="12" Background="{StaticResource RDAccentTintBrush}" VerticalAlignment="Top"><TextBlock x:Name="StepNum2" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                <TextBlock x:Name="StepText2" Grid.Column="1" Style="{StaticResource RDTextMuted}" VerticalAlignment="Center"/></Grid>
+                                            <Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                                <Border Width="24" Height="24" CornerRadius="12" Background="{StaticResource RDAccentTintBrush}" VerticalAlignment="Top"><TextBlock x:Name="StepNum3" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                <TextBlock x:Name="StepText3" Grid.Column="1" Style="{StaticResource RDTextMuted}" VerticalAlignment="Center"/></Grid>
+                                        </StackPanel>
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <TextBlock x:Name="ExpiryText" Style="{StaticResource RDTextMuted}" VerticalAlignment="Center"/>
+                                            <Button x:Name="RegenerateButton" Grid.Column="1" Style="{StaticResource RDSecondaryButton}" Click="RegenerateButton_Click">
+                                                <StackPanel Orientation="Horizontal" Spacing="8"><rd:RDIcon Glyph="Update" Size="16"/><TextBlock x:Name="RegenerateLabel" VerticalAlignment="Center"/></StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                                <Grid ColumnSpacing="10" Padding="4,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Border Width="28" Height="28" CornerRadius="{StaticResource RDRadiusTileSm}" Background="{StaticResource RDIconTileBrush}" BorderBrush="{StaticResource RDIconTileLineBrush}" BorderThickness="1" VerticalAlignment="Top">
+                                        <rd:RDIcon Glyph="Pulse" Size="16" Foreground="{StaticResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock x:Name="NearbyHintText" Grid.Column="1" Style="{StaticResource RDTextMuted}" FontSize="{StaticResource RDTypeSub}" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Connected view (shown instead of PairingLayout by RefreshDevicesList). -->
+                        <StackPanel x:Name="ConnectedPanel" Visibility="Collapsed" Spacing="14">
+                            <rd:RDStatusRing x:Name="ConnectedRing" HorizontalAlignment="Center"/>
+                            <Border Style="{StaticResource RDCard}" Padding="20">
+                                <Grid x:Name="ConnectedHero" ColumnSpacing="24" RowSpacing="16">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Border x:Name="ConnectedArtworkSurface" Background="{StaticResource RDSurfaceBrush}" CornerRadius="12" Padding="12" VerticalAlignment="Top"><Grid x:Name="ConnectedArtworkHost" Height="192"/></Border>
+                                    <StackPanel x:Name="ConnectedDetails" Grid.Column="1" Spacing="8" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Spacing="8"><Ellipse Width="8" Height="8" Fill="{StaticResource RDSuccessBrush}" VerticalAlignment="Center"/><TextBlock x:Name="ConnectedStatusText" FontSize="{StaticResource RDTypeBody}" Foreground="{StaticResource RDTextMutedBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/><rd:RDPathBadge x:Name="ConnectedPathBadge"/></StackPanel>
+                                        <TextBlock x:Name="ConnectedDeviceName" FontSize="{StaticResource RDTypeTitle}" FontWeight="Bold" Foreground="{StaticResource RDTextBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock x:Name="ConnectedLocalText" FontSize="{StaticResource RDTypeSub}" Foreground="{StaticResource RDTextMutedBrush}" TextWrapping="Wrap"/>
+                                        <TextBlock x:Name="SessionDurationText" FontSize="{StaticResource RDTypeBody}" Foreground="{StaticResource RDTextBrush}"/>
+                                        <TextBlock x:Name="NegotiatedTargetText" Style="{StaticResource RDTextHelper}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Grid x:Name="ConnectionMetricsHost" ColumnSpacing="10" RowSpacing="10"/>
+                            <Border Style="{StaticResource RDCard}">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <Border Width="34" Height="34" CornerRadius="{StaticResource RDRadiusTile}" Background="{StaticResource RDIconTileBrush}" BorderBrush="{StaticResource RDIconTileLineBrush}" BorderThickness="1" VerticalAlignment="Center">
+                                        <rd:RDIcon Glyph="Devices" Size="18" Foreground="{StaticResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock x:Name="ConnectedCountText" Grid.Column="1" FontSize="{StaticResource RDTypeBody}" FontWeight="SemiBold" Foreground="{StaticResource RDTextBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    <Button x:Name="DisconnectAllCardButton" Grid.Column="2" Style="{StaticResource RDDangerButton}" Click="DisconnectAllButton_Click" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Compatibility shim for MainPage.xaml.cs (owned by D4): elements its code still writes to. Never shown. -->
+                        <Grid x:Name="LegacyHost" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock x:Name="ConnectionStepOne"/>
+                                <TextBlock x:Name="ConnectionStepTwo"/>
+                                <TextBlock x:Name="ComputerNameLabel"/>
+                                <Button x:Name="CopyNameButton" Click="CopyNameButton_Click"/>
+                                <TextBlock x:Name="StatusLabel"/>
+                                <TextBlock x:Name="LocalStatusText"/>
+                                <Button x:Name="ConnectedDisconnectButton" Click="DisconnectAllButton_Click"/>
+                                <Border x:Name="ConnectionFooter">
+                                    <StackPanel>
+                                        <TextBlock x:Name="ConnectionCountText"/>
+                                        <TextBlock x:Name="ConnectionSummaryText"/>
+                                        <Button x:Name="DisconnectAllButton" Click="DisconnectAllButton_Click" IsEnabled="False"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+                <Grid x:Name="DevicesPanel" Visibility="Collapsed" RowSpacing="20">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid ColumnSpacing="16"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel Spacing="6"><TextBlock x:Name="DevicesPageTitle" Style="{StaticResource RDTextTitle}" TextWrapping="Wrap"/><TextBlock x:Name="DevicesPageSubtitle" FontSize="{StaticResource RDTypeSub}" Foreground="{StaticResource RDTextMutedBrush}" TextWrapping="Wrap"/></StackPanel>
+                        <Button Grid.Column="1" x:Name="AddDeviceButton" Click="PairDeviceButton_Click" Style="{StaticResource RDPrimaryButton}" VerticalAlignment="Top"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" HorizontalContentAlignment="Left">
+                        <StackPanel x:Name="DevicesContent" Spacing="14">
+                            <Grid x:Name="DevicesListHost" ColumnSpacing="14" RowSpacing="14"/>
+                            <Border x:Name="DevicesEmptyState" Style="{StaticResource RDCard}" Padding="28" HorizontalAlignment="Stretch">
+                                <StackPanel Spacing="12" HorizontalAlignment="Center">
+                                    <Border Width="56" Height="56" CornerRadius="16" Background="{StaticResource RDIconTileBrush}" BorderBrush="{StaticResource RDIconTileLineBrush}" BorderThickness="1" HorizontalAlignment="Center">
+                                        <rd:RDIcon Glyph="Devices" Size="28" Foreground="{StaticResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock x:Name="DevicesTitle" Style="{StaticResource RDTextSection}" TextAlignment="Center" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="DevicesBody" FontSize="{StaticResource RDTypeSub}" Foreground="{StaticResource RDTextMutedBrush}" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="380"/>
+                                    <Button x:Name="PairDeviceButton" Click="PairDeviceButton_Click" Style="{StaticResource RDPrimaryButton}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+                <ScrollViewer x:Name="PhoneHubPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" HorizontalContentAlignment="Stretch"><StackPanel x:Name="PhoneHubContent" Spacing="16" HorizontalAlignment="Stretch" MaxWidth="1000"/></ScrollViewer>
+                <ScrollViewer x:Name="TransfersPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" HorizontalContentAlignment="Left"><StackPanel x:Name="TransfersContent" Spacing="16" HorizontalAlignment="Left" MaxWidth="820"/></ScrollViewer>
+                <ScrollViewer x:Name="TutorialPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" HorizontalContentAlignment="Left">
+                    <StackPanel x:Name="TutorialContent" Spacing="16" MaxWidth="1000" HorizontalAlignment="Left"/>
+                </ScrollViewer>
+                <ScrollViewer x:Name="SettingsPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" HorizontalContentAlignment="Left">
+                    <StackPanel x:Name="SettingsContent" Spacing="18" MaxWidth="820" HorizontalAlignment="Left">
+                        <StackPanel Spacing="6"><TextBlock x:Name="SettingsPageTitle" Style="{StaticResource RDTextTitle}"/><TextBlock x:Name="SettingsPageSubtitle" FontSize="{StaticResource RDTypeSub}" Foreground="{StaticResource RDTextMutedBrush}" TextWrapping="Wrap"/></StackPanel>
+                        <StackPanel x:Name="SettingsSectionsHost" Spacing="14"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+        <Canvas x:Name="HighlightLayer" Grid.ColumnSpan="2" IsHitTestVisible="False"/>
+        <Grid x:Name="TourOverlay" Grid.ColumnSpan="2" Visibility="Collapsed" FlowDirection="LeftToRight" SizeChanged="TourOverlay_SizeChanged"><Canvas x:Name="TourCanvas"/></Grid>
+    </Grid>
+</Page>

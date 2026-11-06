@@ -1,0 +1,14 @@
+<UserControl
+    x:Class="ReyDesk.Windows.Controls.RDPathBadge"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:rd="using:ReyDesk.Windows.Controls"
+    IsTabStop="False">
+    <Grid Height="26">
+        <Rectangle x:Name="Pill" RadiusX="13" RadiusY="13" StrokeThickness="1"/>
+        <StackPanel Orientation="Horizontal" Spacing="6" Margin="10,0" VerticalAlignment="Center">
+            <rd:RDIcon x:Name="Glyph" Size="14"/>
+            <TextBlock x:Name="Label" FontSize="{ThemeResource RDTypeLabel}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

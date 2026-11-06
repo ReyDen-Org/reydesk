@@ -1,0 +1,161 @@
+<!--
+  HIDDEN DEBUG GALLERY (D2). Not wired into MainWindow. Reach it by launching the exe with the argument  /rd-gallery
+  (needs one line in MainWindow.xaml.cs, replacing the final RootFrame.Navigate(typeof(MainPage)) call):
+      RootFrame.Navigate(Environment.GetCommandLineArgs().Contains("/rd-gallery") ? typeof(Controls.ControlGallery) : typeof(MainPage));
+  Shows every control and state. Hover, press and tab through the live controls for the interaction states.
+  Toggles on top: reduced motion (RDMotion.ForceReduced, rebuilds the page) and RTL flow direction.
+-->
+<Page
+    x:Class="ReyDesk.Windows.Controls.ControlGallery"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:rd="using:ReyDesk.Windows.Controls">
+    <Grid x:Name="Root" Background="{ThemeResource RDBgBrush}">
+        <ScrollViewer>
+            <StackPanel Padding="28,20" Spacing="22" MaxWidth="1000" HorizontalAlignment="Stretch">
+                <TextBlock Style="{StaticResource RDTextTitle}" Text="ReyDesk control gallery (debug)"/>
+                <StackPanel Orientation="Horizontal" Spacing="24">
+                    <ToggleSwitch x:Name="ReducedToggle" OnContent="Reduced motion" OffContent="Motion on" Toggled="Reduced_Toggled"/>
+                    <ToggleSwitch x:Name="RtlToggle" OnContent="RTL" OffContent="LTR" Toggled="Rtl_Toggled"/>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Buttons (rest, disabled, glyph, loading)"/>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Style="{StaticResource RDPrimaryButton}" Content="Primary"/>
+                    <Button Style="{StaticResource RDSecondaryButton}" Content="Secondary"/>
+                    <Button Style="{StaticResource RDTonalButton}" Content="Tonal"/>
+                    <Button Style="{StaticResource RDGhostButton}" Content="Ghost"/>
+                    <Button Style="{StaticResource RDDangerButton}" Content="Danger"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Style="{StaticResource RDPrimaryButton}" Content="Primary" IsEnabled="False"/>
+                    <Button Style="{StaticResource RDSecondaryButton}" Content="Secondary" IsEnabled="False"/>
+                    <Button Style="{StaticResource RDTonalButton}" Content="Tonal" IsEnabled="False"/>
+                    <Button Style="{StaticResource RDGhostButton}" Content="Ghost" IsEnabled="False"/>
+                    <Button Style="{StaticResource RDDangerButton}" Content="Danger" IsEnabled="False"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Style="{StaticResource RDTonalButton}">
+                        <StackPanel Orientation="Horizontal" Spacing="8"><rd:RDIcon Glyph="Copy" Size="18"/><TextBlock Text="Copy"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource RDSecondaryButton}">
+                        <StackPanel Orientation="Horizontal" Spacing="8"><rd:RDIcon Glyph="Plus" Size="18"/><TextBlock Text="Add"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource RDPrimaryButton}">
+                        <StackPanel Orientation="Horizontal" Spacing="8"><ProgressRing Style="{StaticResource RDButtonProgressRing}" Foreground="{ThemeResource RDOnAccentBrush}"/><TextBlock Text="Working"/></StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource RDIconButton}" AutomationProperties.Name="Info"><rd:RDIcon Glyph="Info" Size="18"/></Button>
+                    <Button Style="{StaticResource RDIconButton}" AutomationProperties.Name="Edit"><rd:RDIcon Glyph="Edit" Size="18"/></Button>
+                    <Button Style="{StaticResource RDIconDangerButton}" AutomationProperties.Name="Delete"><rd:RDIcon Glyph="Trash" Size="18"/></Button>
+                    <Button Style="{StaticResource RDIconButton}" IsEnabled="False"><rd:RDIcon Glyph="Eye" Size="18"/></Button>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Card, tile, path badges"/>
+                <Border Style="{StaticResource RDCard}">
+                    <StackPanel Spacing="10">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Border Width="34" Height="34" CornerRadius="{ThemeResource RDRadiusTile}" Background="{ThemeResource RDIconTileBrush}"
+                                    BorderBrush="{ThemeResource RDIconTileLineBrush}" BorderThickness="1">
+                                <rd:RDIcon Glyph="Id" Size="18" Foreground="{ThemeResource RDAccentBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Style="{StaticResource RDTextLabel}" Text="Card title" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource RDTextMuted}" Text="Card body copy in muted text."/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <rd:RDPathBadge Kind="Lan" Text="LAN"/>
+                            <rd:RDPathBadge Kind="Direct" Text="Direct"/>
+                            <rd:RDPathBadge Kind="Relay" Text="Relay"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Segmented, chips"/>
+                <StackPanel Orientation="Horizontal" Spacing="24">
+                    <Border Style="{StaticResource RDSegmentedContainer}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <RadioButton GroupName="seg" Style="{StaticResource RDSegmentedItem}" Content="Quality" IsChecked="True"/>
+                            <RadioButton GroupName="seg" Style="{StaticResource RDSegmentedItem}" Content="Balanced"/>
+                            <RadioButton GroupName="seg" Style="{StaticResource RDSegmentedItem}" Content="Speed"/>
+                            <RadioButton GroupName="seg" Style="{StaticResource RDSegmentedItem}" Content="Off" IsEnabled="False"/>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <ToggleButton Style="{StaticResource RDChip}" Content="All" IsChecked="True"/>
+                        <ToggleButton Style="{StaticResource RDChip}" Content="Online"/>
+                        <ToggleButton Style="{StaticResource RDChip}" Content="Offline" IsEnabled="False"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Progress"/>
+                <StackPanel Spacing="10" MaxWidth="420" HorizontalAlignment="Left">
+                    <rd:RDProgress Value="0"/>
+                    <rd:RDProgress Value="40"/>
+                    <rd:RDProgress Value="100"/>
+                    <rd:RDProgress IsIndeterminate="True"/>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Inputs, checkbox, toggle"/>
+                <StackPanel Spacing="10" MaxWidth="420" HorizontalAlignment="Left">
+                    <TextBlock Style="{StaticResource RDTextLabel}" Text="Label"/>
+                    <TextBox Style="{StaticResource RDTextBox}" PlaceholderText="Placeholder"/>
+                    <TextBox Style="{StaticResource RDTextBox}" Text="Filled value"/>
+                    <TextBox Style="{StaticResource RDTextBox}" Text="Disabled" IsEnabled="False"/>
+                    <TextBox Style="{StaticResource RDTextBoxError}" Text="7KQ4 MZ2P"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <rd:RDIcon Glyph="Warning" Size="14" Foreground="{ThemeResource RDDangerBrush}"/>
+                        <TextBlock Style="{StaticResource RDTextError}" Text="Check character does not match"/>
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource RDTextHelper}" Text="Helper text in faint."/>
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <CheckBox Style="{StaticResource RDCheckBox}" Content="Unchecked"/>
+                        <CheckBox Style="{StaticResource RDCheckBox}" Content="Checked" IsChecked="True"/>
+                        <CheckBox Style="{StaticResource RDCheckBox}" Content="Disabled" IsEnabled="False"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <ToggleSwitch OnContent="On" OffContent="Off" IsOn="True"/>
+                        <ToggleSwitch OnContent="On" OffContent="Off"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Listbox (keyboard: Enter / arrows / Home / End / type-ahead / Esc)"/>
+                <StackPanel Spacing="10" MaxWidth="320" HorizontalAlignment="Left">
+                    <rd:RDListBox x:Name="ListA" PlaceholderText="Choose quality" AutomationProperties.Name="Quality"/>
+                    <rd:RDListBox x:Name="ListB" PlaceholderText="Pre-selected"/>
+                    <rd:RDListBox x:Name="ListC" PlaceholderText="Disabled" IsEnabled="False"/>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Skeleton (card layout)"/>
+                <Border Style="{StaticResource RDCard}" MaxWidth="420" HorizontalAlignment="Left">
+                    <StackPanel Spacing="10">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <rd:RDSkeleton Width="34" Height="34" Radius="11"/>
+                            <rd:RDSkeleton Width="120" Height="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <rd:RDSkeleton Width="240" Height="22"/>
+                        <rd:RDSkeleton Width="160" Height="12"/>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Status ring (compact row, all states)"/>
+                <ItemsControl x:Name="Rings">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="12"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Toast"/>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Button Style="{StaticResource RDSecondaryButton}" Content="Info" Click="Toast_Info"/>
+                    <Button Style="{StaticResource RDSecondaryButton}" Content="Success" Click="Toast_Success"/>
+                    <Button Style="{StaticResource RDSecondaryButton}" Content="Warning + action" Click="Toast_Warning"/>
+                    <Button Style="{StaticResource RDDangerButton}" Content="Error (stays)" Click="Toast_Error"/>
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource RDTextSection}" Text="Icons (stroke 1.9, 24 grid)"/>
+                <ItemsControl x:Name="IconGrid">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="8"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <Border Height="60"/>
+            </StackPanel>
+        </ScrollViewer>
+        <rd:RDToast x:Name="Toast"/>
+    </Grid>
+</Page>

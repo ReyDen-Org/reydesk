@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+import "reydesk/v1/capabilities.proto";
+import "reydesk/v1/pairing.proto";
+import "reydesk/v1/input.proto";
+import "reydesk/v1/clipboard.proto";
+import "reydesk/v1/file_transfer.proto";
+import "reydesk/v1/diagnostics.proto";
+import "reydesk/v1/signaling.proto";
+import "reydesk/v1/companion.proto";
+import "reydesk/v1/file_data.proto";
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+// Every message sent over a ReyDesk data channel is one Envelope.
+// `protocol_version` lets either side reject/degrade gracefully instead of
+// silently misparsing a future incompatible message (spec §39). Video and
+// audio are NOT carried here — they're native WebRTC media tracks; this
+// envelope is exclusively the control-plane (see docs/protocol.md).
+message Envelope {
+  uint32 protocol_version = 1;
+  string session_id = 2;
+  int64 sent_at_unix_ms = 3;
+
+  oneof payload {
+    DeviceCapabilities capabilities = 10;
+    NegotiatedConfig negotiated_config = 11;
+
+    PairingOffer pairing_offer = 20;
+    PairingRequest pairing_request = 21;
+    PairingResponse pairing_response = 22;
+
+    MouseMove mouse_move = 30;
+    MouseButtonEvent mouse_button = 31;
+    MouseScroll mouse_scroll = 32;
+    KeyEvent key_event = 33;
+    TextInput text_input = 34;
+    GamepadButtonEvent gamepad_button = 35;
+    GamepadAxisEvent gamepad_axis = 36;
+
+    ClipboardUpdate clipboard_update = 40;
+
+    FileTransferOffer file_transfer_offer = 50;
+    FileTransferResponse file_transfer_response = 51;
+    FileTransferProgress file_transfer_progress = 52;
+    FileTransferControl file_transfer_control = 53;
+
+    ConnectionStatus connection_status = 60;
+    StreamStats stream_stats = 61;
+
+    SessionOffer session_offer = 70;
+    SessionAnswer session_answer = 71;
+    IceCandidate ice_candidate = 72;
+    CompanionRequest companion_request = 80;
+    CompanionResult companion_result = 81;
+    PhoneHubEvent phone_hub_event = 82;
+    FileTransferChunk file_transfer_chunk = 83;
+
+    HostInfo host_info = 90;
+  }
+}
+
+// Current protocol major version. Bump on any breaking wire-format change;
+// Envelope.protocol_version is checked against this at session start.
+message ProtocolVersion {
+  uint32 major = 1;
+}

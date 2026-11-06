@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same rationale as backup_rules.xml: exclude everything from cloud backup/transfer
+     by default until pairing/session storage exists and can be explicitly reasoned about. -->
+<data-extraction-rules>
+    <cloud-backup>
+    </cloud-backup>
+    <device-transfer>
+    </device-transfer>
+</data-extraction-rules>

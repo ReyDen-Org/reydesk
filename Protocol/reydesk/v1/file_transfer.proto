@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+// File bytes never touch protobuf messages directly — metadata only here.
+// Chunk transfer happens over a dedicated WebRTC data channel with the
+// transfer_id correlating chunks to a FileTransferOffer, so large files
+// don't get base64-inflated or block control-plane messages (spec §28).
+
+message FileTransferOffer {
+  string transfer_id = 1;
+  string file_name = 2;
+  uint64 file_size_bytes = 3;
+  string mime_type_hint = 4;
+  string sha256_hex = 5; // integrity check once fully received
+}
+
+enum FileTransferDecision {
+  FILE_TRANSFER_DECISION_UNSPECIFIED = 0;
+  FILE_TRANSFER_DECISION_ACCEPT = 1;  // requires explicit user confirmation
+  FILE_TRANSFER_DECISION_REJECT = 2;
+}
+
+message FileTransferResponse {
+  string transfer_id = 1;
+  FileTransferDecision decision = 2;
+}
+
+enum FileTransferState {
+  FILE_TRANSFER_STATE_UNSPECIFIED = 0;
+  FILE_TRANSFER_STATE_IN_PROGRESS = 1;
+  FILE_TRANSFER_STATE_PAUSED = 2;
+  FILE_TRANSFER_STATE_COMPLETED = 3;
+  FILE_TRANSFER_STATE_CANCELED = 4;
+  FILE_TRANSFER_STATE_FAILED = 5;
+}
+
+message FileTransferProgress {
+  string transfer_id = 1;
+  uint64 bytes_transferred = 2;
+  FileTransferState state = 3;
+  string error_detail = 4; // diagnostic only, not shown verbatim to the user
+}
+
+message FileTransferControl {
+  string transfer_id = 1;
+  FileTransferState requested_state = 2; // PAUSED, CANCELED to request pause/cancel
+}

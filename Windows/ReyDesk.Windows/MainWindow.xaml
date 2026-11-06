@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="ReyDesk.Windows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:ReyDesk.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="ReyDesk"
+    mc:Ignorable="d">
+    <!-- Opaque surfaces only (contract 2.18): no Mica, window background is RDBgBrush. -->
+    <Grid x:Name="RootGrid" Background="{StaticResource RDBgBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- 48 high drag region. Kept physically left-to-right so the system caption buttons (always at the physical right)
+             never overlap content; the inner TitleContent follows the app reading direction. -->
+        <Border x:Name="AppTitleBar" Height="48" Background="{StaticResource RDTitleBarBrush}"
+                BorderBrush="{StaticResource RDLineBrush}" BorderThickness="0,0,0,1">
+            <Grid x:Name="TitleBarGrid" FlowDirection="LeftToRight">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="TitleLeftInset" Width="0" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition x:Name="TitleRightInset" Width="0" />
+                </Grid.ColumnDefinitions>
+                <Grid x:Name="TitleContent" Grid.Column="1" Padding="16,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <Image Source="Assets/Square44x44Logo.targetsize-24_altform-unplated.png" Width="20" Height="20"
+                               AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock Text="ReyDesk" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   Foreground="{StaticResource RDTextMutedBrush}" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Pages go in MainPage.xaml, not here. -->
+        <Frame x:Name="RootFrame" Grid.Row="1" />
+    </Grid>
+</Window>

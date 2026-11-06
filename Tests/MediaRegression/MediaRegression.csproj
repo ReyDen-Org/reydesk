@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup><Compile Include="../../Windows/ReyDesk.Windows/Media/VideoFrameTiming.cs" Link="VideoFrameTiming.cs" /></ItemGroup>
+  <ItemGroup><Compile Include="../../Windows/ReyDesk.Windows/Media/H264RtpSender.cs" Link="H264RtpSender.cs" /></ItemGroup>
+</Project>

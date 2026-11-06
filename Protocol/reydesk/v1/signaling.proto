@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+import "reydesk/v1/capabilities.proto";
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+// WebRTC SDP/ICE signaling, relayed over the same TCP connection used for
+// pairing (see docs/protocol.md "Pairing & signaling transport") - there is
+// no separate signaling server in local mode, so these messages ride the
+// Envelope oneof like everything else on that connection. Windows always
+// offers (it owns the video source and the negotiated data channels);
+// Android always answers.
+message SessionOffer {
+  string session_id = 1;
+  string sdp = 2;
+}
+
+message SessionAnswer {
+  string session_id = 1;
+  string sdp = 2;
+  // Optional receiver preferences for this connection; zero fields inherit the
+  // host setting. The host bounds every request to its configured ceilings.
+  NegotiatedConfig requested_config = 3;
+  bool control_only = 4;
+  string quality_preset = 5;
+}
+
+// One trickled ICE candidate. `sdp_mid`/`sdp_m_line_index` mirror the
+// standard RTCIceCandidateInit fields so both SIPSorcery and org.webrtc can
+// reconstruct a native candidate object directly from this message.
+message IceCandidate {
+  string session_id = 1;
+  string candidate = 2;
+  string sdp_mid = 3;
+  uint32 sdp_m_line_index = 4;
+}

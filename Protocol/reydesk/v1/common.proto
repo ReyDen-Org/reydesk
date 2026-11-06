@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+// Platform a device is running on. Deliberately not limited to the v1
+// clients (Windows/Android) so iOS/Linux can be added without a schema
+// break — see docs/protocol.md "Platform neutrality".
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_WINDOWS = 1;
+  PLATFORM_ANDROID = 2;
+  PLATFORM_IOS = 3;
+  PLATFORM_LINUX = 4;
+  PLATFORM_MACOS = 5;
+}
+
+// Stable identity of one paired device. `device_id` is a client-generated
+// UUID persisted locally at first run — never derived from hardware
+// identifiers (IMEI, MAC, etc.) so it carries no PII and survives OS
+// reinstalls only if the user re-pairs, which is intentional.
+message DeviceIdentity {
+  string device_id = 1;
+  string display_name = 2;
+  Platform platform = 3;
+  string app_version = 4;
+  // v2: stable remote Desk ID, empty until registered with the rendezvous service.
+  string desk_id = 5;
+}
+
+// Identifies one active connection between two paired devices, local or
+// remote. Distinct from DeviceIdentity: a device can have many sessions
+// over its lifetime, only ever one DeviceIdentity.
+message SessionIdentity {
+  string session_id = 1;
+  string local_device_id = 2;
+  string remote_device_id = 3;
+}
+
+enum ConnectionMedium {
+  CONNECTION_MEDIUM_UNSPECIFIED = 0;
+  CONNECTION_MEDIUM_LOCAL = 1;   // direct LAN / hotspot, no internet involved
+  CONNECTION_MEDIUM_REMOTE = 2;  // internet, via signaling (+ TURN if relayed)
+}

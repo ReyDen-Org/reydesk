@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Protocol/csharp/ReyDesk.Protocol/ReyDesk.Protocol.csproj" />
+    <Compile Include="../../Windows/ReyDesk.Windows/PhoneHub/PhoneAlertGate.cs" Link="PhoneAlertGate.cs" />
+    <Compile Include="../../Windows/ReyDesk.Windows/Platform/TrayIcon.cs" Link="TrayIcon.cs" />
+    <Compile Include="../../Windows/ReyDesk.Windows/Platform/TrayPalette.cs" Link="TrayPalette.cs" />
+    <Compile Include="../../Windows/ReyDesk.Windows/Localization/Strings.cs" Link="Strings.cs" />
+  </ItemGroup>
+</Project>

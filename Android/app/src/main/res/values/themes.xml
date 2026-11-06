@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Minimal manifest/launch theme only - all real theming (colors, typography)
+        happens in Compose via ui/theme/Theme.kt, not here. This just avoids a flash
+        of the wrong background before Compose content attaches.
+    -->
+    <style name="Theme.ReyDesk" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@color/window_background</item>
+        <item name="android:windowSplashScreenBackground">@color/window_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+    </style>
+</resources>

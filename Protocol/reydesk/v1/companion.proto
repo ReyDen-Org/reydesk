@@ -1,0 +1,58 @@
+syntax = "proto3";
+package reydesk.v1;
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+// Additive v1 extensions, transported ONLY on the authenticated DTLS control lane.
+message CompanionRequest {
+  string request_id = 1;
+  // Fixed allowlist; never shell commands, paths or executable payloads.
+  string operation = 2;
+  string notification_id = 3;
+  string action_id = 4;
+  string text = 5;
+}
+message CompanionResult {
+  string request_id = 1;
+  bool success = 2;
+  string detail = 3;
+}
+message PhoneAction {
+  string id = 1;
+  string label = 2;
+  bool accepts_reply = 3;
+  repeated string reply_choices = 4;
+  bool allows_free_form = 5;
+}
+message PhoneNotification {
+  string id = 1;
+  string package_name = 2;
+  string app_name = 3;
+  string title = 4;
+  string text = 5;
+  int64 posted_at_unix_ms = 6;
+  string category = 7;
+  string group_key = 8;
+  bool redacted = 9;
+  repeated PhoneAction actions = 10;
+  bytes icon_png = 11;
+  // Changes whenever Android replaces the action handles for this notification.
+  string revision = 12;
+}
+message PhoneHubState {
+  bool access_granted = 1;
+  bool enabled = 2;
+  bool previews = 3;
+  string phone_name = 4;
+  int32 battery_percent = 5; // -1 = unknown
+  bool charging = 6;
+  string detail = 7;
+}
+message PhoneHubEvent {
+  // status, snapshot_start, upsert, removed, snapshot_end, clear
+  string kind = 1;
+  PhoneNotification notification = 2;
+  string removed_id = 3;
+  PhoneHubState state = 4;
+}

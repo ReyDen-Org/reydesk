@@ -1,0 +1,53 @@
+using ReyDesk.Protocol.V1;
+using ReyDesk.Windows.PhoneHub;
+using Google.Protobuf;
+
+int passed = 0;
+void Check(bool value, string name) { if (!value) throw new Exception(name); passed++; }
+var inbox = new PhoneInbox();
+PhoneHubEvent Status(bool access = true, bool enabled = true) => new() { Kind = "status", State = new PhoneHubState { AccessGranted = access, Enabled = enabled, PhoneName = "Samsung", BatteryPercent = 80 } };
+PhoneHubEvent Upsert(string id, long time = 1) => new() { Kind = "upsert", Notification = new PhoneNotification { Id = id, AppName = "Messages", PackageName = "test.messages", Title = "سلام", Text = "پیام جدید", Revision = "revision-1", PostedAtUnixMs = time } };
+Check(!inbox.Apply(Upsert("before-status")), "Never render notifications before permission status");
+Check(inbox.Apply(Status()) && inbox.State!.BatteryPercent == 80, "Actual phone status projected");
+var first = Upsert("message");
+Check(inbox.Apply(first) && inbox.Items.Count == 1, "Eligible active message appears");
+first.Notification.Text = "Changed after enqueue";
+Check(inbox.Items.Single().Text == "پیام جدید", "Wire mutation cannot change projected data");
+var newer = Upsert("message", 2); newer.Notification.Text = "Updated";
+Check(inbox.Apply(newer) && inbox.Items.Count == 1 && inbox.Items.Single().Text == "Updated", "Notification replacement deduplicated");
+var redacted = Upsert("message", 3); redacted.Notification.Redacted = true;
+redacted.Notification.Actions.Add(new PhoneAction { Id = "unsafe", Label = "Reply" });
+Check(inbox.Apply(redacted) && inbox.Items.Single().Text.Length == 0 && inbox.Items.Single().Title.Length == 0 && inbox.Items.Single().Actions.Count == 0, "Redaction removes stale previews and actions");
+Check(inbox.Apply(new PhoneHubEvent { Kind = "removed", RemovedId = "message" }) && inbox.Items.Count == 0, "Android removal clears notification");
+inbox.Apply(Upsert("old"));
+Check(inbox.Apply(new PhoneHubEvent { Kind = "snapshot_start" }) && inbox.Items.Count == 0 && inbox.Syncing, "Reconnect snapshot replaces old projection");
+inbox.Apply(Upsert("current"));
+Check(inbox.Apply(new PhoneHubEvent { Kind = "snapshot_end" }) && !inbox.Syncing && inbox.Items.Count == 1, "Snapshot completes with active messages only");
+Check(inbox.Apply(Status(false)) && inbox.Items.Count == 0, "Revoked notification access immediately purges content");
+Check(!inbox.Apply(Upsert("revoked")), "Revoked bridge cannot refill inbox");
+inbox.Apply(Status()); inbox.Apply(Upsert("active"));
+Check(inbox.Apply(Status(enabled: false)) && inbox.Items.Count == 0, "Pause purges content");
+inbox.Apply(Status());
+var oversized = Upsert("oversized"); oversized.Notification.Text = new string('x', 8193);
+Check(!inbox.Apply(oversized), "Oversized message rejected");
+oversized = Upsert("oversized"); oversized.Notification.IconPng = ByteString.CopyFrom(new byte[32769]);
+Check(!inbox.Apply(oversized), "Oversized icon rejected");
+oversized = Upsert("icon-invalid"); oversized.Notification.IconPng = ByteString.CopyFrom(new byte[24]);
+Check(!inbox.Apply(oversized), "Non-PNG icon rejected");
+oversized = Upsert("icon-bomb");
+var iconBomb = new byte[24]; new byte[] {137,80,78,71,13,10,26,10}.CopyTo(iconBomb,0);
+"IHDR"u8.CopyTo(iconBomb.AsSpan(12)); System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(iconBomb.AsSpan(16), uint.MaxValue);
+System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(iconBomb.AsSpan(20), 32);
+oversized.Notification.IconPng = ByteString.CopyFrom(iconBomb);
+Check(!inbox.Apply(oversized), "Huge decoded dimensions rejected before bitmap decoding");
+oversized = Upsert("oversized"); for(int i=0;i<13;i++) oversized.Notification.Actions.Add(new PhoneAction { Id = i.ToString() });
+Check(!inbox.Apply(oversized), "Too many action handles rejected");
+Check(!inbox.Apply(new PhoneHubEvent { Kind = "unknown" }), "Unknown event ignored");
+for (int i = 0; i < 250; i++) inbox.Apply(Upsert(i.ToString(), i));
+Check(inbox.Items.Count == PhoneInbox.MaxItems && !inbox.Items.Any(n => n.Id == "0"), "Inbox bounded and oldest notifications evicted");
+inbox.Clear();
+Check(inbox.Items.Count == 0 && inbox.State is null && inbox.LastSeen is null && !inbox.Syncing, "Disconnect removes content and metadata");
+var malformed = new byte[] { 0xff, 0xff, 0xff };
+try { PhoneHubEvent.Parser.ParseFrom(malformed); throw new Exception("Malformed protobuf accepted"); }
+catch (InvalidProtocolBufferException) { passed++; }
+Console.WriteLine($"PhoneInbox: {passed} checks PASS");

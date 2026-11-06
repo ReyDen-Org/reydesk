@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package reydesk.v1;
+
+option csharp_namespace = "ReyDesk.Protocol.V1";
+option java_package = "ir.reyden.reydesk.protocol.v1";
+option java_multiple_files = true;
+
+enum ClipboardContentType {
+  CLIPBOARD_CONTENT_TYPE_UNSPECIFIED = 0;
+  CLIPBOARD_CONTENT_TYPE_TEXT = 1;
+  CLIPBOARD_CONTENT_TYPE_IMAGE_PNG = 2;
+}
+
+// User-initiated only — never sent automatically without clipboard sync
+// being explicitly enabled by the user on both ends (spec §16). Large
+// payloads (images) go out as one or more chunks over the reliable data
+// channel; `is_final_chunk` lets the receiver know when to reassemble.
+message ClipboardUpdate {
+  ClipboardContentType content_type = 1;
+  bytes data = 2;
+  uint32 chunk_index = 3;
+  bool is_final_chunk = 4;
+  string update_id = 5; // groups chunks belonging to one logical update
+}

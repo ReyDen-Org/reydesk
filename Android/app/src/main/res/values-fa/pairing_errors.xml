@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pair_err_wrong_code">کد اشتباه است. کد ۶ رقمی روی رایانه را بررسی کنید و دوباره تلاش کنید.</string>
+    <string name="pair_err_pc_unavailable">رایانه در دسترس نیست: آفلاین است، دسترسی اینترنتی آن خاموش است یا کد فعالی ندارد.</string>
+    <string name="pair_err_no_answer">رایانه به‌موقع پاسخ نداد. مطمئن شوید ReyDesk روی رایانه باز است.</string>
+    <string name="pair_err_rate_limited">تعداد تلاش‌ها زیاد بود. یک دقیقه صبر کنید و دوباره تلاش کنید.</string>
+    <string name="pair_err_declined">اتصال روی رایانه رد شد.</string>
+    <string name="pair_err_code_expired">کد منقضی شده است. روی رایانه کد تازه‌ای بسازید.</string>
+    <string name="pair_err_not_confirmed">یکسان بودن کدها تأیید نشد.</string>
+    <string name="pair_err_paused">مقایسه کد پس از تلاش‌های ناموفق متوقف شده است. چند دقیقه دیگر دوباره تلاش کنید.</string>
+    <string name="pair_err_phone_offline">این گوشی به سرور ReyDesk وصل نیست. دسترسی اینترنتی را در تنظیمات روشن کنید.</string>
+    <string name="pair_err_lan_unreachable">رایانه در این شبکه در دسترس نیست. برای اتصال از هر جا، دسترسی اینترنتی را روی هر دو دستگاه روشن کنید.</string>
+    <string name="pair_err_offer_expired">این کد QR یا کد اتصال منقضی شده یا قبلاً استفاده شده است. روی رایانه کد تازه‌ای بسازید.</string>
+    <string name="pair_err_qr_used">این کد QR قبلاً استفاده شده است. روی رایانه «ساخت کد جدید» را بزنید و کد تازه را اسکن کنید.</string>
+</resources>

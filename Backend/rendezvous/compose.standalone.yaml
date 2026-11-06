@@ -1,0 +1,29 @@
+# Override for machines without devdb: adds its own postgres:16.
+#   docker compose -f compose.yaml -f compose.standalone.yaml up -d --build
+services:
+  rendezvous:
+    environment:
+      DATABASE_URL: postgres://reydesk:reydesk_local@postgres:5432/reydesk?sslmode=disable
+    depends_on:
+      - postgres
+    networks: !override [default]
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: reydesk
+      POSTGRES_PASSWORD: reydesk_local
+      POSTGRES_DB: reydesk
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reydesk"]
+      interval: 5s
+      retries: 10
+    networks: [default]
+
+networks:
+  devdb: !reset null
+
+volumes:
+  pgdata:
